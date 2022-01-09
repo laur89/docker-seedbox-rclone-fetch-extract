@@ -27,7 +27,7 @@ CURL_FLAGS=(
 )
 
 LOCKFILE="/var/lock/${SELF:-$(basename -- "$0")}"  # note $SELF is defined by importing script
-LOCKFD=95
+LOCKFD=9
 
 # locking logic (from https://stackoverflow.com/a/1985512/3344729):
 # PRIVATE

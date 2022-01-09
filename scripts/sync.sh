@@ -22,7 +22,7 @@ is_upstream_removed() {
 source /common.sh || { echo -e "    ERROR: failed to import /common.sh"; exit 1; }
 
 _prepare_locking
-exlock_now || { info 'unable to obtain lock'; exit 0; }
+exlock_now || { info "unable to obtain lock - $?"; exit 0; }
 
 validate_config_common
 check_connection || fail "no internets"

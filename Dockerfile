@@ -12,6 +12,7 @@ RUN apk update && \
         unrar \
         unzip \
         grep \
+        findutils \
         curl \
         bash \
         ca-certificates \
