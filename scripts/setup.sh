@@ -6,6 +6,9 @@
 # - initialises crontab;
 # - configures msmtprc for mail notifications;
 
+readonly SELF="${0##*/}"
+DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"  # location of this script
+
 readonly CRONFILE_TEMPLATE='/cron.template'
 readonly CRON_TARGET='/etc/crontabs/abc'  # note filename needs to match user's!
 readonly DEFAULT_CRON_PATTERN='*/5 * * * *'
