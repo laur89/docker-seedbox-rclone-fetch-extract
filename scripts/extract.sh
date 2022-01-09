@@ -12,7 +12,7 @@ declare -A FORMAT_TO_COMMAND=(
     [zip]='unzip -u'
     [rar]='unrar -o- e'
 )
-EXTRACTION_SUBDIR='extracted'  # content will be extracted into this to-be-created subfolder; no slashes!
+EXTRACTION_SUBDIR="${EXTRACTION_SUBDIR:-extracted}"  # content will be extracted into this to-be-created subfolder; no slashes!
                                # note if this dir already exists, we modify this value
 DISK_THRESHOLD_GB=30  # in GB; we must estimate min. this amount of free disk space left _after_ extraction, otherwise skip
 

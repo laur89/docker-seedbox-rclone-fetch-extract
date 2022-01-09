@@ -770,8 +770,8 @@ validate_config_common() {
 
 #[[ -f "${ENV_ROOT}/common-env.conf" ]] && source "${ENV_ROOT}/common-env.conf"
 
+[[ -d "$LOG_ROOT" ]] || mkdir -p -- "$LOG_ROOT" || fail "creation of log root dir [$LOG_ROOT] failed w/ $?"
 set_path
-[[ -d "$LOG_ROOT" ]] || mkdir -p -- "$LOG_ROOT" || fail
 
 if [[ -n "$HC_ID" ]]; then
     ping_healthcheck "$HC_ID" &  # note we background not to hinder main workflow

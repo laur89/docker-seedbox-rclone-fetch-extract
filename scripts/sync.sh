@@ -22,7 +22,7 @@ is_upstream_removed() {
 source /common.sh || { echo -e "    ERROR: failed to import /common.sh"; exit 1; }
 
 _prepare_locking
-exlock_now || { log 'unable to obtain lock'; exit 0; }
+exlock_now || { info 'unable to obtain lock'; exit 0; }
 
 validate_config_common
 check_connection || fail "no internets"
@@ -62,7 +62,7 @@ done
 while read -r f; do
     if is_upstream_removed "$f"; then
         rm -rf -- "$DEST_FINAL/$f" \
-                && log "removed [$DEST_FINAL/$f] whose remote counterpart is gone" \
+                && info "removed [$DEST_FINAL/$f] whose remote counterpart is gone" \
                 || err "[rm -rf $DEST_FINAL/$f] failed w/ $?"
     fi
 done< <(find -L "$DEST_FINAL" -mindepth 1 -maxdepth 1 -printf '%f\n')

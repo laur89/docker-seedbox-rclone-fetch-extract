@@ -1,0 +1,21 @@
+kind: pipeline
+type: docker
+name: default
+
+steps:
+- name: publish-image
+  image: plugins/docker
+  settings:
+    username:
+      from_secret: public_docker_username
+    password:
+      from_secret: public_docker_password
+    auto_tag: true
+    repo: layr/seedbox-rclone-fetcher-extractor
+
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/heads/develop
+  - refs/heads/feature/*
+  - refs/tags/*
