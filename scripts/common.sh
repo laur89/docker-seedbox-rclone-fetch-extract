@@ -16,7 +16,7 @@ LOG_TIMESTAMP_FORMAT='+%F %T'
 
 HC_HEAD='https://hc-ping.com'
 
-DEFAULT_DEST_INITIAL='.primary-dest'
+DEFAULT_DEST_INITIAL='.rclone-intermediary'
 
 CURL_FLAGS=(
     -w '\n'
@@ -760,8 +760,8 @@ validate_config_common() {
     [[ -d "$DEST_FINAL" ]] || fail "[$DEST_FINAL] needs to be a valid dir - missing mount?"
 
     if [[ -z "$DEST_INITIAL" ]]; then
-        DEST_INITIAL="$DEST_FINAL/$DEFAULT_DEST_INITIAL"
-        mkdir -- "$DEST_INITIAL" || fail
+        export DEST_INITIAL="$DEST_FINAL/$DEFAULT_DEST_INITIAL"
+        mkdir -- "$DEST_INITIAL" || fail "[mkdir $DEST_INITIAL] failed w/ $?"
     fi
 
     [[ -d "$DEST_INITIAL" ]] || fail "[$DEST_INITIAL] needs to be a valid dir - missing mount?"

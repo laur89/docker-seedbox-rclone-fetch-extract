@@ -76,3 +76,5 @@ monitoring.
 - notification systems
 - healthchecks
 - confirm `extract.sh/enough_space_for_extraction()` works as intended
+- do we need `--tpslimit` and/or `--checkers` option?
+- confirm optimal `--transfers` opt;

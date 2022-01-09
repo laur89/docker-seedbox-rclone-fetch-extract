@@ -11,7 +11,7 @@ steps:
     password:
       from_secret: public_docker_password
     auto_tag: true
-    repo: layr/seedbox-rclone-fetcher-extractor
+    repo: layr/seedbox-rclone-fetch-extract
 
 trigger:
   ref:
