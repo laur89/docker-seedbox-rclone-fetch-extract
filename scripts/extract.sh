@@ -94,7 +94,11 @@ for format in "${!FORMAT_TO_COMMAND[@]}"; do
 
         if [[ "$e" -eq 0 ]]; then
             info "OK extraction of [$file] in $duration"
-            rm -- "$file"  # can nuke the archive, servarrs won't care for it anyways
+            if [[ -z "$SKIP_ARCHIVE_RM" ]]; then
+                rm -- "$file" \
+                        && info "removed extracted archive [$file]" \
+                        || err "[rm $file] failed w/ $?"
+            fi
         else
             err "[${FORMAT_TO_COMMAND[$format]} '$file'] failed w/ [$e] in $duration"
             # TODO: should we try and remove the created extraction output dir here?

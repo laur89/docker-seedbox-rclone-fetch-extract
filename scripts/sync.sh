@@ -59,13 +59,15 @@ for f in "${remote_nodes[@]}"; do
 done
 
 # ...nuke assets that are already removed on the remote:
-while read -r f; do
-    if is_upstream_removed "$f"; then
-        rm -rf -- "$DEST_FINAL/$f" \
-                && info "removed [$DEST_FINAL/$f] whose remote counterpart is gone" \
-                || err "[rm -rf $DEST_FINAL/$f] failed w/ $?"
-    fi
-done< <(find -L "$DEST_FINAL" -mindepth 1 -maxdepth 1 -printf '%f\n')
+if [[ -z "$SKIP_LOCAL_RM" ]]; then
+    while IFS= read -r -d $'\0' f; do
+        if is_upstream_removed "$f"; then
+            rm -rf -- "$DEST_FINAL/$f" \
+                    && info "removed [$DEST_FINAL/$f] whose remote counterpart is gone" \
+                    || err "[rm -rf $DEST_FINAL/$f] failed w/ $?"
+        fi
+    done< <(find -L "$DEST_FINAL" -mindepth 1 -maxdepth 1 -printf '%f\0')
+fi
 
 # pull new assets:
 if [[ "${#INCLUDES[@]}" -gt 0 ]]; then

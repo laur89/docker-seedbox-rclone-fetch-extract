@@ -3,6 +3,11 @@
 Dockerised service periodically pulling data from a remote seedbox & extracting
 archived files.
 
+Note data is synced unidirectionally, but if already downloaded & processed
+asset gets deleted on the remote, then it's also nuked locally. This is generally
+the preferred method, as \*arr service should be responsible for torrent removal
+upon successful import anyways.
+
 ## Rationale
 
 This service aims to solve a common issue with the servarr projects around data import
@@ -34,6 +39,10 @@ monitoring.
 - `CRON_PATTERN`: cron pattern to be used to execute the syncing script;
    eg `*/10 * * * *` to execute every 10 minutes; defaults to every 5 min;
 - `SKIP_EXTRACT`: set this to any non-empty value to skip archived file extraction;
+- `SKIP_ARCHIVE_RM`: set this to any non-empty value to skip removal of archives 
+   that were successfully extracted;
+- `SKIP_LOCAL_RM`: set this to any non-empty value to skip removing assets in 
+  `$DEST_FINAL` whose counterpart has been removed on the remote;
 - `RCLONE_OPTS`: space-separated additional options to be passed to all `rclone` commands;
   useful eg if you want to override the `--bwlimit` option (which defaults to 15M);
 - `PGID`: user id;
