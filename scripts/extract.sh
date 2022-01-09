@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+#
+# This script extracts completed archives.
+########################################################
+readonly SELF="${0##*/}"
+DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"  # location of this script
+
+ASSET="$1"  # file/dir to extract
+JOB_ID="$PPID"  # because that's the PID of calling sync.sh process
+
+declare -A FORMAT_TO_COMMAND=(
+    [zip]='unzip -u'
+    [rar]='unrar -o- e'
+)
+EXTRACTION_SUBDIR='extracted'  # content will be extracted into this to-be-created subfolder; no slashes!
+                               # note if this dir already exists, we modify this value
+DISK_THRESHOLD_GB=30  # in GB; we must estimate min. this amount of free disk space left _after_ extraction, otherwise skip
+
+
+cleanup() {
+    local duration
+
+    if [[ "$EXEC_MARKER" -eq 1 ]]; then
+        duration="$(print_time "$(($(date +%s) - START_TIME))")"
+        info "--> finished all in $duration"
+    fi
+}
+
+
+enough_space_for_extraction() {
+    local f free_disk size free_disk_after_gb
+
+    f="$1"
+
+    free_disk="$(space_left -b "$f")" || fail "space_left() returned w/ $?"  # bytes
+    size="$(get_size -b "$f")" || fail "get_size() returned w/ $?"  # bytes; note we estimate unpacked $f size to equal its size in packed state
+
+    free_disk_after_gb="$(bc <<< "($free_disk - $size) * 0.000000001")"  # byte -> GB
+    LC_ALL=C printf -v free_disk_after_gb '%.0f' "$free_disk_after_gb"
+
+    [[ "$free_disk_after_gb" -ge "$DISK_THRESHOLD_GB" ]] && return 0
+    err "skipping [$f] extraction - final free disk would be ~ [${free_disk_after_gb}GB], below our threshold of [${DISK_THRESHOLD_GB}GB]"
+    return 1
+}
+
+
+
+## ENTRY
+source /common.sh || { echo -e "    ERROR: failed to import /common.sh"; exit 1; }
+
+trap 'cleanup' SIGHUP SIGINT SIGTERM EXIT
+
+START_TIME="$(date +%s)"
+ERR=0
+
+for format in "${!FORMAT_TO_COMMAND[@]}"; do
+    while read -r file; do
+        ft="$(file --brief "$file")"
+        if ! grep -qiE 'archive|compressed' <<< "$ft"; then
+            err "file [$file] is not an archive: filetype is [$ft]"
+            continue
+        fi
+
+        filename="$(basename -- "$file")"
+
+        cd -- "$(dirname -- "$file")" || { err "cd to [$file] containing dir failed w/ $?"; ERR=1; continue; }
+
+        if [[ "$file" == "$ASSET" ]]; then
+            # handle special case where $ASSET itself is the archive file, ie it's not in its own directory:
+            # note unsure whether servarrs are happy with this solution or not;
+            file="${ASSET}.orig"
+            mv -- "$ASSET" "$file"
+            command mkdir -- "$ASSET" || { err "[mkdir $ASSET] failed w/ $?; we're currently in [$(pwd)]"; ERR=1; continue; }
+            mv -- "$file" "$ASSET/$filename"
+            cd -- "$ASSET" || { err "cd to $ASSET failed w/ $?"; ERR=1; continue; }
+            file="./$filename"
+        else
+            ext_dir="$EXTRACTION_SUBDIR"
+            [[ -e "$ext_dir" ]] && ext_dir+="-$filename"  # sanity check to make sure the original copy doesn't already contain $ext_dir node
+            command mkdir -- "$ext_dir" || { err "[mkdir $ext_dir] failed w/ $?; we're currently in [$(pwd)]"; ERR=1; continue; }
+            cd -- "$ext_dir" || { err "cd to $ext_dir failed w/ $?"; ERR=1; continue; }
+            file="../$filename"
+        fi
+
+        enough_space_for_extraction "$file" || { ERR=1; continue; }
+
+        info "extracting torrent [$filename] file [$file] into [$(pwd)]..."
+        EXEC_MARKER=1  # marks this script did something
+
+        start="$(date +%s)"
+        ${FORMAT_TO_COMMAND[$format]} "$file"
+        e="$?"
+        duration="$(print_time "$(($(date +%s) - start))")"
+
+        if [[ "$e" -eq 0 ]]; then
+            info "OK extraction of [$file] in $duration"
+            rm -- "$file"  # can nuke the archive, servarrs won't care for it anyways
+        else
+            err "[${FORMAT_TO_COMMAND[$format]} '$file'] failed w/ [$e] in $duration"
+            # TODO: should we try and remove the created extraction output dir here?
+            ERR=1
+            continue
+        fi
+    done < <(find "$ASSET" -type f -iname "*.${format}")
+done
+
+exit $ERR
+
