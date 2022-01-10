@@ -57,9 +57,9 @@ for format in "${!FORMAT_TO_COMMAND[@]}"; do
             # handle special case where $ASSET itself is the archive file, ie it's not in its own directory:
             # note unsure whether servarrs are happy with this solution or not;
             file="${ASSET}.orig"
-            mv -- "$ASSET" "$file"
+            mv -- "$ASSET" "$file" || { err "[mv $ASSET $file] failed w/ $?"; ERR=1; continue; }
             mkdir -- "$ASSET" || { err "[mkdir $ASSET] failed w/ $?; we're currently in [$(pwd)]"; ERR=1; continue; }
-            mv -- "$file" "$ASSET/$filename"
+            mv -- "$file" "$ASSET/$filename" || { err "[mv $file $ASSET/$filename] failed w/ $?"; ERR=1; continue; }
             cd -- "$ASSET" || { err "cd to $ASSET failed w/ $?"; ERR=1; continue; }
             file="./$filename"
         else
