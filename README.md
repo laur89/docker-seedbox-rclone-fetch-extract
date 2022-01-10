@@ -49,7 +49,7 @@ monitoring.
 - `SKIP_LOCAL_RM`: set this to any non-empty value to skip removing assets in 
   `$DEST_FINAL` whose counterpart has been removed on the remote;
 - `RCLONE_OPTS`: space-separated additional options to be passed to all `rclone` commands;
-  useful eg if you want to override the `--bwlimit` option (which defaults to 15M) or
+  useful eg if you want to override the `--bwlimit` option (which defaults to 20M) or
   increase logging verbosity;
 - `PGID`: user id;
 - `PUID`: group id;
@@ -81,7 +81,14 @@ monitoring.
 ## TODO
 
 - notification systems
+- set up logrotate
 - healthchecks
-- confirm `extract.sh/enough_space_for_extraction()` works as intended
 - do we need `--tpslimit` and/or `--checkers` option?
 - confirm optimal `--transfers` opt;
+- confirm `extract.sh/enough_space_for_extraction()` works as intended
+- skip downloads of assets that wouldn't fit on local filesystem; eg similar to
+  enough_space_for_extraction(), but for downloading, not extracting;
+- find a better way for compiling `copy` command - atm we're escaping filenames for
+  the `--include` flags; `--files-from` might be an option, but unsure whether
+  it'd pull the whole dir if only dir, as opposed to its contents, is listed;
+

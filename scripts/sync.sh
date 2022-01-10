@@ -29,10 +29,13 @@ check_connection || fail "no internets"
 
 REMOTE_NODES=()
 INCLUDES=()
+
+# note if your seedbox had an nvme or a dedicated disk plan, then there
+# would be no need for bwlimit
 RCLONE_FLAGS=(
   --config "$RCLONE_CONF"
   --fast-list
-  --bwlimit 15M
+  --bwlimit 20M
   --use-mmap
   --transfers 10
 )
@@ -50,12 +53,14 @@ remote_nodes="$(rclone lsf --log-file "$LOG_ROOT/rclone-lsf.log" \
     "${RCLONE_FLAGS[@]}" -- "$REMOTE:$SRC_DIR")" || fail "lsf failed w/ $?"  # TODO: pushover!
 readarray -t remote_nodes <<< "$remote_nodes"
 
-# ...then verify which assets we haven't already downloaded-processed:
+# ...then verify which assets we haven't already downloaded-processed, and compile
+# them into rclone '--include' options:
 for f in "${remote_nodes[@]}"; do
     REMOTE_NODES+=("${f%/}")  # note we remove possible trailing slash
     [[ -e "$DEST_FINAL/${f%/}" ]] && continue  # already been processed
     INCLUDES+=('--include')
-    [[ "$f" == */ ]] && INCLUDES+=("/${f}**") || INCLUDES+=("/$f")
+    f_escaped="$(sed 's/[.\*^$()+?{}|]/\\&/g;s/[][]/\\&/g' <<< "$f")"
+    [[ "$f_escaped" == */ ]] && INCLUDES+=("/${f_escaped}**") || INCLUDES+=("/$f_escaped")
 done
 
 # ...nuke assets that are already removed on the remote:

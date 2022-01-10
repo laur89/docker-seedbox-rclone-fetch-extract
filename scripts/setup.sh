@@ -9,8 +9,9 @@
 readonly SELF="${0##*/}"
 DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"  # location of this script
 
+readonly REGULAR_USER=abc
 readonly CRONFILE_TEMPLATE='/cron.template'
-readonly CRON_TARGET='/etc/crontabs/abc'  # note filename needs to match user's!
+readonly CRON_TARGET="/etc/crontabs/$REGULAR_USER"  # note filename needs to match user's!
 readonly DEFAULT_CRON_PATTERN='*/5 * * * *'
 
 JOB_ID="setup-$$"
@@ -29,8 +30,8 @@ setup_users() {
     PUID=${PUID:-1000}
     PGID=${PGID:-1001}
 
-    groupmod -o -g "$PGID" abc || fail "groupmod exited w/ $?"
-    usermod -o -u "$PUID" abc || fail "usermod exited w/ $?"
+    groupmod -o -g "$PGID" "$REGULAR_USER" || fail "groupmod exited w/ $?"
+    usermod -o -u "$PUID" "$REGULAR_USER" || fail "usermod exited w/ $?"
 }
 
 
