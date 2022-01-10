@@ -761,7 +761,7 @@ validate_config_common() {
 
     if [[ -z "$DEST_INITIAL" ]]; then
         export DEST_INITIAL="$DEST_FINAL/$DEFAULT_DEST_INITIAL"
-        mkdir -- "$DEST_INITIAL" || fail "[mkdir $DEST_INITIAL] failed w/ $?"
+        [[ -d "$DEST_INITIAL" ]] || mkdir -- "$DEST_INITIAL" || fail "[mkdir $DEST_INITIAL] failed w/ $?"
     fi
 
     [[ -d "$DEST_INITIAL" ]] || fail "[$DEST_INITIAL] needs to be a valid dir - missing mount?"

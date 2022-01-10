@@ -58,14 +58,14 @@ for format in "${!FORMAT_TO_COMMAND[@]}"; do
             # note unsure whether servarrs are happy with this solution or not;
             file="${ASSET}.orig"
             mv -- "$ASSET" "$file"
-            command mkdir -- "$ASSET" || { err "[mkdir $ASSET] failed w/ $?; we're currently in [$(pwd)]"; ERR=1; continue; }
+            mkdir -- "$ASSET" || { err "[mkdir $ASSET] failed w/ $?; we're currently in [$(pwd)]"; ERR=1; continue; }
             mv -- "$file" "$ASSET/$filename"
             cd -- "$ASSET" || { err "cd to $ASSET failed w/ $?"; ERR=1; continue; }
             file="./$filename"
         else
             ext_dir="$EXTRACTION_SUBDIR"
             [[ -e "$ext_dir" ]] && ext_dir+="-$filename"  # sanity check to make sure the original copy doesn't already contain $ext_dir node
-            command mkdir -- "$ext_dir" || { err "[mkdir $ext_dir] failed w/ $?; we're currently in [$(pwd)]"; ERR=1; continue; }
+            mkdir -- "$ext_dir" || { err "[mkdir $ext_dir] failed w/ $?; we're currently in [$(pwd)]"; ERR=1; continue; }
             cd -- "$ext_dir" || { err "cd to $ext_dir failed w/ $?"; ERR=1; continue; }
             file="../$filename"
         fi
