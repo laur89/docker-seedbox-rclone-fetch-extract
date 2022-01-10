@@ -13,6 +13,7 @@ RUN apk update && \
         unzip \
         grep \
         findutils \
+        iputils \
         curl \
         bash \
         ca-certificates \
