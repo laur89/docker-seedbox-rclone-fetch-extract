@@ -17,16 +17,6 @@ EXTRACTION_SUBDIR="${EXTRACTION_SUBDIR:-extracted}"  # content will be extracted
 DISK_THRESHOLD_GB=30  # in GB; we must estimate min. this amount of free disk space left _after_ extraction, otherwise skip
 
 
-cleanup() {
-    local duration
-
-    if [[ "$EXEC_MARKER" -eq 1 ]]; then
-        duration="$(print_time "$(($(date +%s) - START_TIME))")"
-        info "--> finished all in $duration"
-    fi
-}
-
-
 enough_space_for_extraction() {
     local f free_disk size free_disk_after_gb
 
@@ -47,8 +37,6 @@ enough_space_for_extraction() {
 
 ## ENTRY
 source /common.sh || { echo -e "    ERROR: failed to import /common.sh"; exit 1; }
-
-trap 'cleanup' SIGHUP SIGINT SIGTERM EXIT
 
 START_TIME="$(date +%s)"
 ERR=0
@@ -84,8 +72,7 @@ for format in "${!FORMAT_TO_COMMAND[@]}"; do
 
         enough_space_for_extraction "$file" || { ERR=1; continue; }
 
-        info "extracting torrent [$filename] file [$file] into [$(pwd)]..."
-        EXEC_MARKER=1  # marks this script did something
+        info "extracting [$ASSET] file [$filename] into [$(pwd)]..."
 
         start="$(date +%s)"
         ${FORMAT_TO_COMMAND[$format]} "$file"
