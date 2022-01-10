@@ -75,7 +75,7 @@ monitoring.
         -v /data/downloads/torrent-complete:/data/complete \
         -v /data/downloads/torrent-rclone-tmp:/data/tmp \
         -v $HOME/.config/seedbox-fetcher:/config \
-        layr/seedbox-rclone-fetcher-extractor
+        layr/seedbox-rclone-fetch-extract
 
 
 ## TODO
