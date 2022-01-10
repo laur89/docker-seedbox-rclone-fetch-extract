@@ -8,6 +8,10 @@ asset gets deleted on the remote, then it's also nuked locally. This is generall
 the preferred method, as \*arr service should be responsible for torrent removal
 upon successful import anyways.
 
+It's also important to know if an already-downloaded source file is modified (apart
+from deleting it), then those modifications will no longer be pulled.
+
+
 ## Rationale
 
 This service aims to solve a common issue with the servarr projects around data import
@@ -20,6 +24,7 @@ We solve this by using rclone to first download assets into an intermediary
 directory not monitored by \*arr services, optionally process them (eg extract
 archives), and then move them atomically to a destination directory that \*arr is
 monitoring.
+
 
 ## Configuration
 
@@ -44,7 +49,8 @@ monitoring.
 - `SKIP_LOCAL_RM`: set this to any non-empty value to skip removing assets in 
   `$DEST_FINAL` whose counterpart has been removed on the remote;
 - `RCLONE_OPTS`: space-separated additional options to be passed to all `rclone` commands;
-  useful eg if you want to override the `--bwlimit` option (which defaults to 15M);
+  useful eg if you want to override the `--bwlimit` option (which defaults to 15M) or
+  increase logging verbosity;
 - `PGID`: user id;
 - `PUID`: group id;
 
@@ -70,6 +76,7 @@ monitoring.
         -v /data/downloads/torrent-rclone-tmp:/data/tmp \
         -v $HOME/.config/seedbox-fetcher:/config \
         layr/seedbox-rclone-fetcher-extractor
+
 
 ## TODO
 
