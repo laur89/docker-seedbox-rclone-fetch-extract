@@ -19,7 +19,7 @@ JOB_ID="setup-$$"
 check_dependencies() {
     local i
 
-    for i in curl bc tr sed grep find flock groupmod usermod ping rclone unzip unrar; do
+    for i in curl bc tr sed grep find file flock groupmod usermod ping rclone unzip unrar; do
         command -v "$i" >/dev/null || fail "[$i] not installed"
     done
 }

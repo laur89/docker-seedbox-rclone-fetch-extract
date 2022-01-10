@@ -12,12 +12,13 @@ RUN apk update && \
         unrar \
         unzip \
         grep \
+        file \
+        coreutils \
         findutils \
         iputils \
         curl \
         bash \
         ca-certificates \
-        coreutils \
         shadow \
         tzdata \
         msmtp \
