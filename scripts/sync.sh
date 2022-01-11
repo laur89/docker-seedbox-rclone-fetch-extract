@@ -8,9 +8,12 @@ JOB_ID="sync-$$"
 
 is_upstream_removed() {
     local local_node remote_node
-    local_node="${1%/}"
+    local_node="$1"
+
+    [[ "$local_node" == */* ]] && fail "passed local node should not contain slashes: [$local_node]"
 
     for remote_node in "${REMOTE_NODES[@]}"; do
+        [[ "$remote_node" == */* ]] && fail "remote node should not contain slashes: [$remote_node]"
         [[ "$remote_node" == "$local_node" ]] && return 1
     done
 
@@ -30,15 +33,19 @@ check_connection || fail "no internets"
 REMOTE_NODES=()
 INCLUDES=()
 
-# note if your seedbox had an nvme or a dedicated disk plan, then there
-# would be no need for bwlimit
-RCLONE_FLAGS=(
-  --config "$RCLONE_CONF"
-  --fast-list
-  --bwlimit 20M
-  --use-mmap
-  --transfers 10
-)
+if [[ -n "${RCLONE_FLAGS[*]}" ]]; then
+    IFS=' ' read -ra RCLONE_FLAGS <<< "$RCLONE_FLAGS"
+else  # no rclone flags provided, define our set of defaults;
+    # note if your seedbox had an nvme or a dedicated disk plan, then there
+    # would be no need for bwlimit
+    RCLONE_FLAGS=(
+      --config "$RCLONE_CONF"
+      --fast-list
+      --bwlimit 20M
+      --use-mmap
+      --transfers 10
+    )
+fi
 
 if [[ -n "${RCLONE_OPTS[*]}" ]]; then
     IFS=' ' read -ra rclone_opts <<< "$RCLONE_OPTS"
@@ -50,7 +57,7 @@ is_dir_empty "$DEST_INITIAL" || err "expected DEST_INITIAL dir [$DEST_INITIAL] t
 
 # first list the remote source dir contents:
 remote_nodes="$(rclone lsf --log-file "$LOG_ROOT/rclone-lsf.log" \
-    "${RCLONE_FLAGS[@]}" -- "$REMOTE:$SRC_DIR")" || fail "lsf failed w/ $?"  # TODO: pushover!
+    "${RCLONE_FLAGS[@]}" -- "$REMOTE:$SRC_DIR")" || fail "rclone lsf failed w/ $?"  # TODO: pushover!
 readarray -t remote_nodes <<< "$remote_nodes"
 
 # ...then verify which assets we haven't already downloaded-processed, and compile
@@ -66,29 +73,29 @@ done
 # ...nuke assets that are already removed on the remote:
 if [[ -z "$SKIP_LOCAL_RM" ]]; then
     while IFS= read -r -d $'\0' f; do
-        if is_upstream_removed "$f"; then
-            rm -rf -- "$DEST_FINAL/$f" \
-                    && info "removed [$DEST_FINAL/$f] whose remote counterpart is gone" \
-                    || err "[rm -rf $DEST_FINAL/$f] failed w/ $?"
+        if is_upstream_removed "$(basename -- "$f")"; then
+            rm -rf -- "$f" \
+                    && info "removed [$f] whose remote counterpart is gone" \
+                    || err "[rm -rf $f] failed w/ $?"
         fi
-    done< <(find -L "$DEST_FINAL" -mindepth 1 -maxdepth 1 -printf '%f\0')
+    done< <(find -L "$DEST_FINAL" -mindepth 1 -maxdepth 1 -print0)
 fi
 
 # pull new assets:
 if [[ "${#INCLUDES[@]}" -gt 0 ]]; then
     rclone copy --log-file "$LOG_ROOT/rclone-copy.log" "${RCLONE_FLAGS[@]}" \
-        "$REMOTE:$SRC_DIR" "$DEST_INITIAL" "${INCLUDES[@]}" || fail "copy failed w/ $?"  # TODO: pushover!
+        "$REMOTE:$SRC_DIR" "$DEST_INITIAL" "${INCLUDES[@]}" || fail "rclone copy failed w/ $?"  # TODO: pushover!
 fi
 
 # process assets.
 # note we work on _all_ nodes in $DEST_INITIAL, not only ones
 # that were pulled during this execution; this is essentially
 # for retrying previous failures:
-while IFS= read -r -d $'\0' i; do
+while IFS= read -r -d $'\0' f; do
     if [[ -z "$SKIP_EXTRACT" ]]; then
-        extract.sh "$i" || { err "[$i] extraction failed"; continue; }  # TODO: pushover!
+        extract.sh "$f" || { err "[$f] extraction failed"; continue; }  # TODO: pushover!
     fi
-    mv -- "$i" "$DEST_FINAL/" || { err "[mv $i $DEST_FINAL/] failed w/ $?"; continue; }  # TODO: pushover!
-done < <(find -L "$DEST_INITIAL" -mindepth 1 -maxdepth 1 -print0)
+    mv -- "$f" "$DEST_FINAL/" || { err "[mv $f $DEST_FINAL/] failed w/ $?"; continue; }  # TODO: pushover!
+done< <(find -L "$DEST_INITIAL" -mindepth 1 -maxdepth 1 -print0)
 
 exit 0

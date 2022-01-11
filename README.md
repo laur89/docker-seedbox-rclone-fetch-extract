@@ -5,8 +5,8 @@ archived files.
 
 Note data is synced unidirectionally, but if already downloaded & processed
 asset gets deleted on the remote, then it's also nuked locally. This is generally
-the preferred method, as \*arr service should be responsible for torrent removal
-upon successful import anyways.
+the preferred method, as \*arr service (or whatever other media manager you happen
+to use) should be responsible for torrent removal upon successful import anyways.
 
 It's also important to know if an already-downloaded source file is modified (apart
 from deleting it), then those modifications will no longer be pulled.
@@ -23,7 +23,7 @@ downloaded from your remote seedbox, then only those episodes present would be i
 We solve this by using rclone to first download assets into an intermediary
 directory not monitored by \*arr services, optionally process them (eg extract
 archives), and then move them atomically to a destination directory that \*arr is
-monitoring.
+expecting them in.
 
 
 ## Configuration
@@ -48,7 +48,10 @@ monitoring.
    that were successfully extracted;
 - `SKIP_LOCAL_RM`: set this to any non-empty value to skip removing assets in 
   `$DEST_FINAL` whose counterpart has been removed on the remote;
-- `RCLONE_OPTS`: space-separated additional options to be passed to all `rclone` commands;
+- `RCLONE_FLAGS`: space-separated options to use with all `rclone` commands; note this
+   overwrites the default rclone flags altogether, so make sure you know what you're
+   doing;
+- `RCLONE_OPTS`: space-separated _additional_ options to be passed to all `rclone` commands;
   useful eg if you want to override the `--bwlimit` option (which defaults to 20M) or
   increase logging verbosity;
 - `PGID`: user id;

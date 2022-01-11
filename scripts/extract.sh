@@ -6,15 +6,15 @@ readonly SELF="${0##*/}"
 DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"  # location of this script
 
 ASSET="$1"  # file/dir to extract
-JOB_ID="$PPID"  # because that's the PID of calling sync.sh process
+JOB_ID="$PPID"  # PID of the calling sync.sh process
 
 declare -A FORMAT_TO_COMMAND=(
     [zip]='unzip -u'
     [rar]='unrar -o- e'
 )
 EXTRACTION_SUBDIR="${EXTRACTION_SUBDIR:-extracted}"  # content will be extracted into this to-be-created subfolder; no slashes!
-                               # note if this dir already exists, we modify this value
-DISK_THRESHOLD_GB=30  # in GB; we must estimate min. this amount of free disk space left _after_ extraction, otherwise skip
+                                                     # note if this dir already exists, we modify this value.
+EXTRACT_DISK_THRESHOLD_GB=${EXTRACT_DISK_THRESHOLD_GB:-30}  # in GB; we must estimate min. this amount of free disk space left _after_ extraction, otherwise skip.
 
 
 enough_space_for_extraction() {
@@ -28,8 +28,8 @@ enough_space_for_extraction() {
     free_disk_after_gb="$(bc <<< "($free_disk - $size) * 0.000000001")"  # byte -> GB
     LC_ALL=C printf -v free_disk_after_gb '%.0f' "$free_disk_after_gb"
 
-    [[ "$free_disk_after_gb" -ge "$DISK_THRESHOLD_GB" ]] && return 0
-    err "skipping [$f] extraction - final free disk would be ~ [${free_disk_after_gb}GB], below our threshold of [${DISK_THRESHOLD_GB}GB]"
+    [[ "$free_disk_after_gb" -ge "$EXTRACT_DISK_THRESHOLD_GB" ]] && return 0
+    err "skipping [$f] extraction - final free disk would be ~ [${free_disk_after_gb}GB], below our threshold of [${EXTRACT_DISK_THRESHOLD_GB}GB]"
     return 1
 }
 
@@ -42,7 +42,7 @@ START_TIME="$(date +%s)"
 ERR=0
 
 for format in "${!FORMAT_TO_COMMAND[@]}"; do
-    while read -r file; do
+    while IFS= read -r -d $'\0' file; do
         ft="$(file --brief "$file")"
         if ! grep -qiE 'archive|compressed' <<< "$ft"; then
             err "file [$file] is not an archive: filetype is [$ft]"
@@ -53,10 +53,11 @@ for format in "${!FORMAT_TO_COMMAND[@]}"; do
 
         cd -- "$(dirname -- "$file")" || { err "cd to [$file] containing dir failed w/ $?"; ERR=1; continue; }
 
+        # handle special case where $ASSET itself is the archive file, ie it's not in its own directory:
         if [[ "$file" == "$ASSET" ]]; then
-            # handle special case where $ASSET itself is the archive file, ie it's not in its own directory:
-            # note unsure whether servarrs are happy with this solution or not;
-            file="${ASSET}.orig"
+            # TODO note unsure whether servarrs are happy with this solution or not;
+            #      maybe pushover so we can see how it fares in real life?
+            file="${ASSET}.${RANDOM}.tmp"
             mv -- "$ASSET" "$file" || { err "[mv $ASSET $file] failed w/ $?"; ERR=1; continue; }
             mkdir -- "$ASSET" || { err "[mkdir $ASSET] failed w/ $?; we're currently in [$(pwd)]"; ERR=1; continue; }
             mv -- "$file" "$ASSET/$filename" || { err "[mv $file $ASSET/$filename] failed w/ $?"; ERR=1; continue; }
@@ -92,7 +93,7 @@ for format in "${!FORMAT_TO_COMMAND[@]}"; do
             ERR=1
             continue
         fi
-    done < <(find "$ASSET" -type f -iname "*.${format}")
+    done < <(find "$ASSET" -type f -iname "*.${format}" -print0)
 done
 
 exit $ERR
