@@ -65,7 +65,7 @@ is_function() {
 
 
 check_connection() {
-    ping -W 2 -c 1 -- 1.1.1.1 > /dev/null 2>&1
+    ping -W 10 -c 1 -- 1.1.1.1 > /dev/null 2>&1
 }
 
 
