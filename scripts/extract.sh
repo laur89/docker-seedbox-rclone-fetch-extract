@@ -71,7 +71,7 @@ for format in "${!FORMAT_TO_COMMAND[@]}"; do
             file="../$filename"
         fi
 
-        enough_space_for_extraction "$file" || { ERR=1; continue; }
+        enough_space_for_extraction "$file" || { ERR=1; continue; }  # TODO: pushover? or is sync.sh sending pushover notif when extract.sh exits w/ err?
 
         info "extracting [$ASSET] file [$filename] into [$(pwd)]..."
 
