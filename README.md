@@ -75,11 +75,10 @@ archived asset handling isn't described in much detail, but can be found [here](
         --name seedbox-fetcher \
         -e REMOTE=seedbox \
         -e SRC_DIR=files/complete \
-        -e DEST_INITIAL=/data/tmp \
+        -e DEST_INITIAL=/data/rclone-tmp \
         -e DEST_FINAL=/data/complete \
         -e UID=1003 \
-        -v /data/downloads/torrent-complete:/data/complete \
-        -v /data/downloads/torrent-rclone-tmp:/data/tmp \
+        -v /host/dir/downloads/torrents:/data \
         -v $HOME/.config/seedbox-fetcher:/config \
         layr/seedbox-rclone-fetch-extract
 
