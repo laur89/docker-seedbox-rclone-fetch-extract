@@ -25,6 +25,9 @@ directory not monitored by \*arr services, optionally process them (eg extract
 archives), and then move them atomically to a destination directory that \*arr is
 expecting them in.
 
+servarrs' completed download handling is documented/described [here](https://wiki.servarr.com/en/sonarr/settings#completed-download-handling);
+archived asset handling isn't described in much detail, but can be found [here](https://wiki.servarr.com/en/sonarr/troubleshooting#packed-torrents).
+
 
 ## Configuration
 

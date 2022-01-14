@@ -95,7 +95,13 @@ while IFS= read -r -d $'\0' f; do
     if [[ -z "$SKIP_EXTRACT" ]]; then
         extract.sh "$f" || { err "[$f] extraction failed"; continue; }  # TODO: pushover!
     fi
-    mv -- "$f" "$DEST_FINAL/" || { err "[mv $f $DEST_FINAL/] failed w/ $?"; continue; }  # TODO: pushover!
+
+    if [[ -e "$DEST_FINAL/$(basename -- "$f")" ]]; then
+        err "[$DEST_FINAL/$(basename -- "$f")] already exists; cannot move [$f] into $DEST_FINAL"  # TODO: pushover!
+        continue
+    else
+        mv -- "$f" "$DEST_FINAL/" || { err "[mv $f $DEST_FINAL/] failed w/ $?"; continue; }  # TODO: pushover!
+    fi
 done< <(find -L "$DEST_INITIAL" -mindepth 1 -maxdepth 1 -print0)
 
 exit 0
