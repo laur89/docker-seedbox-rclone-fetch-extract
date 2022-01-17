@@ -8,6 +8,8 @@ set -o pipefail
 readonly CONF_ROOT='/config'
 readonly LOG_ROOT="$CONF_ROOT/logs"  # note path is also tied to logrotate config
 readonly RCLONE_CONF="$CONF_ROOT/rclone.conf"
+readonly SKIP_EXTRACT_MARKER_FILE='.skip-extract'  # file marking everything under its containing path shall be left un-extracted
+
 
 LOG="$LOG_ROOT/${SELF}.log"
 

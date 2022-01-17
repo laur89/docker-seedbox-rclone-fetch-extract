@@ -32,6 +32,7 @@ check_connection || fail "no internets"
 
 REMOTE_NODES=()
 INCLUDES=()
+TO_DOWNLOAD_LIST=()
 
 if [[ -n "${RCLONE_FLAGS[*]}" ]]; then
     IFS=' ' read -ra RCLONE_FLAGS <<< "$RCLONE_FLAGS"
@@ -65,6 +66,7 @@ readarray -t remote_nodes <<< "$remote_nodes"
 for f in "${remote_nodes[@]}"; do
     REMOTE_NODES+=("${f%/}")  # note we remove possible trailing slash
     [[ -e "$DEST_FINAL/${f%/}" ]] && continue  # already been processed
+    TO_DOWNLOAD_LIST+=("$f")
     INCLUDES+=('--include')
     f_escaped="$(sed 's/[.\*^$()+?{}|]/\\&/g;s/[][]/\\&/g' <<< "$f")"
     [[ "$f_escaped" == */ ]] && INCLUDES+=("/${f_escaped}**") || INCLUDES+=("/$f_escaped")
@@ -83,6 +85,11 @@ fi
 
 # pull new assets:
 if [[ "${#INCLUDES[@]}" -gt 0 ]]; then
+    info "going to copy following nodes from remote:"
+    for i in "${TO_DOWNLOAD_LIST[@]}"; do
+        info "  - [$i]"
+    done
+
     rclone copy --log-file "$LOG_ROOT/rclone-copy.log" "${RCLONE_FLAGS[@]}" \
         "$REMOTE:$SRC_DIR" "$DEST_INITIAL" "${INCLUDES[@]}" || fail "rclone copy failed w/ $?"  # TODO: pushover!
 fi
@@ -92,7 +99,7 @@ fi
 # that were pulled during this execution; this is essentially
 # for retrying previous failures:
 while IFS= read -r -d $'\0' f; do
-    if [[ -z "$SKIP_EXTRACT" ]]; then
+    if [[ -z "$SKIP_EXTRACT" && ! -e "$DEST_FINAL/$SKIP_EXTRACT_MARKER_FILE" ]]; then
         extract.sh "$f" || { err "[$f] extraction failed"; continue; }  # TODO: pushover!
     fi
 
