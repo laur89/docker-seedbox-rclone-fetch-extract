@@ -83,10 +83,20 @@ for format in "${!FORMAT_TO_COMMAND[@]}"; do
 
         if [[ "$e" -eq 0 ]]; then
             info "OK extraction of [$file] in $duration"
+
             if [[ -z "$SKIP_ARCHIVE_RM" ]]; then
-                rm -- "$file" \
-                        && info "removed extracted archive [$file]" \
-                        || err "[rm $file] failed w/ $?"
+                rm -- "$file"
+                rm_e="$?"
+
+                if [[ "$rm_e" -eq 0 ]]; then
+                    info "removed extracted archive [$file]"
+                    # delete also rar part files:
+                    if [[ "$format" == rar && "$file" == '../'* ]]; then
+                        find ../ -maxdepth 1 -mindepth 1 -type f -iregex '^\.\./.*\.r[0-9]+$' -delete || err "find-deleting .r\d+ files failed w/ $?"
+                    fi
+                else
+                    err "[rm $file] failed w/ $rm_e"
+                fi
             fi
         else
             err "[${FORMAT_TO_COMMAND[$format]} '$file'] failed w/ [$e] in $duration"
