@@ -8,6 +8,7 @@ DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"  # location of this sc
 ASSET="$1"  # file/dir to extract
 JOB_ID="$PPID"  # PID of the calling sync.sh process
 
+# TODO: consider global extract command such as        /usr/bin/7z x "%F/*.rar" -o"%F/"
 declare -A FORMAT_TO_COMMAND=(
     [zip]='unzip -u'
     [rar]='unrar -o- e'

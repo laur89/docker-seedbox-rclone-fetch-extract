@@ -57,6 +57,8 @@ archived asset handling isn't described in much detail, but can be found [here](
 - `RCLONE_OPTS`: space-separated _additional_ options to be passed to all `rclone` commands;
   useful eg if you want to override the `--bwlimit` option (which defaults to 20M) or
   increase logging verbosity;
+- `WATCHDIR_DEST`: path to the watchdir on your remote;
+- `WATCHDIR_SRC`: path to the watchdir mounted in container;
 - `PGID`: user id;
 - `PUID`: group id;
 
@@ -64,6 +66,7 @@ archived asset handling isn't described in much detail, but can be found [here](
 
 - you need to provide valid mountpoint to your defined `DEST_FINAL` (& `DEST_INITIAL`
   if env var is defined);
+   - same for `WATCHDIR_SRC`, if defined
 - mount point to configuration root dir at `/config` also needs to be provided;
 - valid rclone config file `rclone.conf` needs to be present in `/config` mount dir;
   this conf needs to define the remote set by `REMOTE` env var;

@@ -767,6 +767,11 @@ validate_config_common() {
     fi
 
     [[ -d "$DEST_INITIAL" ]] || fail "[$DEST_INITIAL] needs to be a valid dir - missing mount?"
+    [[ -n "$WATCHDIR_DEST" && -z "$WATCHDIR_SRC" ]] && fail "if WATCHDIR_DEST is defined, then WATCHDIR_SRC needs to be defined as well"
+    [[ -z "$WATCHDIR_DEST" && -n "$WATCHDIR_SRC" ]] && fail "if WATCHDIR_SRC is defined, then WATCHDIR_DEST needs to be defined as well"
+    if [[ -n "$WATCHDIR_SRC" ]]; then
+        [[ -d "$WATCHDIR_SRC" ]] || fail "[$WATCHDIR_SRC], when defined, needs to be a valid dir - missing mount?"
+    fi
 }
 
 

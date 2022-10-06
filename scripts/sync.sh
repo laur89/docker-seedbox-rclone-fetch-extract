@@ -56,6 +56,12 @@ fi
 # non-empty $DEST_INITIAL suggests issues during previous run(s):
 is_dir_empty "$DEST_INITIAL" || err "expected DEST_INITIAL dir [$DEST_INITIAL] to be empty, but it's not"
 
+# move assets _to_ remote (.torrent files to watchdir):
+if [[ -d "$WATCHDIR_SRC" ]] && ! is_dir_empty "$WATCHDIR_SRC"; then
+    rclone move --log-file "$LOG_ROOT/rclone-move.log" "${RCLONE_FLAGS[@]}" \
+            "$WATCHDIR_SRC" "$REMOTE:$WATCHDIR_DEST" || err "rclone move from [$WATCHDIR_SRC] to [$WATCHDIR_DEST] failed w/ $?"  # TODO: pushover! but do _not_ fail out here
+fi
+
 # first list the remote source dir contents:
 remote_nodes="$(rclone lsf --log-file "$LOG_ROOT/rclone-lsf.log" \
     "${RCLONE_FLAGS[@]}" -- "$REMOTE:$SRC_DIR")" || fail "rclone lsf failed w/ $?"  # TODO: pushover!
@@ -84,10 +90,13 @@ if [[ -z "$SKIP_LOCAL_RM" ]]; then
 fi
 
 # pull new assets:
-if [[ "${#INCLUDES[@]}" -gt 0 ]]; then
-    info "going to copy following nodes from remote:"
+if [[ "${#TO_DOWNLOAD_LIST[@]}" -gt 0 ]]; then
+    [[ "${#TO_DOWNLOAD_LIST[@]}" -gt 1 ]] && s=s
+    info "going to copy following ${#TO_DOWNLOAD_LIST[@]} node${s} from remote:"
+    unset s
+
     for i in "${TO_DOWNLOAD_LIST[@]}"; do
-        info "  - [$i]"
+        info "  > $i"
     done
 
     rclone copy --log-file "$LOG_ROOT/rclone-copy.log" "${RCLONE_FLAGS[@]}" \
