@@ -754,33 +754,54 @@ kill_pids() {
 validate_config_common() {
     local i
 
+    mkdir_w_rights "$LOG_ROOT"
+
     [[ -d "$CONF_ROOT" ]] || fail "[$CONF_ROOT] needs to be a valid dir - missing mount?"
 
     vars_defined  REMOTE  SRC_DIR  DEST_FINAL
 
     [[ -f "$RCLONE_CONF" ]] || fail "[$RCLONE_CONF] needs to be a valid file"
     [[ -d "$DEST_FINAL" ]] || fail "[$DEST_FINAL] needs to be a valid dir - missing mount?"
+    [[ -w "$DEST_FINAL" ]] || fail "[$DEST_FINAL] is not writable"
+    [[ -w "$LOG_ROOT" ]] || fail "[$LOG_ROOT] is not writable"
 
-    if [[ -z "$DEST_INITIAL" ]]; then
+    if [[ -n "$DEST_INITIAL" ]]; then
+        [[ -d "$DEST_INITIAL" ]] || fail "[$DEST_INITIAL] needs to be a valid dir - missing mount?"
+        [[ -w "$DEST_INITIAL" ]] || fail "[$DEST_INITIAL] is not writable"
+    else
         export DEST_INITIAL="$DEST_FINAL/$DEFAULT_DEST_INITIAL"
-        [[ -d "$DEST_INITIAL" ]] || mkdir -- "$DEST_INITIAL" || fail "[mkdir $DEST_INITIAL] failed w/ $?"
     fi
 
-    [[ -d "$DEST_INITIAL" ]] || fail "[$DEST_INITIAL] needs to be a valid dir - missing mount?"
+    mkdir_w_rights "$DEST_INITIAL"
+
     [[ -n "$WATCHDIR_DEST" && -z "$WATCHDIR_SRC" ]] && fail "if WATCHDIR_DEST is defined, then WATCHDIR_SRC needs to be defined as well"
     [[ -z "$WATCHDIR_DEST" && -n "$WATCHDIR_SRC" ]] && fail "if WATCHDIR_SRC is defined, then WATCHDIR_DEST needs to be defined as well"
     if [[ -n "$WATCHDIR_SRC" ]]; then
         [[ -d "$WATCHDIR_SRC" ]] || fail "[$WATCHDIR_SRC], when defined, needs to be a valid dir - missing mount?"
+        [[ -r "$WATCHDIR_SRC" ]] || fail "[$WATCHDIR_SRC] is not readable"
+    fi
+}
+
+
+mkdir_w_rights() {
+    local d
+
+    d="$1"
+
+    [[ -d "$d" ]] || mkdir -p -- "$d" || fail "[mkdir -p $d] failed w/ $?"
+
+    if [[ "$EUID" -eq 0 && -n "$PUID" && -n "$PGID" ]]; then
+        chown -R "${PUID}:${PGID}" "$d" || fail "[chown $PUID:$PGID $d] failed w/ $?"
     fi
 }
 
 
 #[[ -f "${ENV_ROOT}/common-env.conf" ]] && source "${ENV_ROOT}/common-env.conf"
 
-[[ -d "$LOG_ROOT" ]] || mkdir -p -- "$LOG_ROOT" || fail "creation of log root dir [$LOG_ROOT] failed w/ $?"
+mkdir_w_rights "$LOG_ROOT"
 set_path
 
-if [[ -n "$HC_ID" ]]; then
+if [[ -n "$HC_ID" && "$EUID" -ne 0 ]]; then  # note we don't run if root (likely at startup/init phase of container)
     ping_healthcheck "$HC_ID" &  # note we background not to hinder main workflow
 fi
 

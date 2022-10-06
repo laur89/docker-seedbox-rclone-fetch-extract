@@ -142,7 +142,7 @@ source /common.sh || { echo -e "    ERROR: failed to import /common.sh"; exit 1;
 
 check_dependencies
 setup_users
-validate_config_common
+validate_config_common  # make sure this comes after setup_users(), so PUID/PGID env vars are set
 setup_cron
 #setup_msmtp
 #setup_logrotate
