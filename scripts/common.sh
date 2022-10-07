@@ -778,7 +778,7 @@ validate_config_common() {
     [[ -z "$WATCHDIR_DEST" && -n "$WATCHDIR_SRC" ]] && fail "if WATCHDIR_SRC is defined, then WATCHDIR_DEST needs to be defined as well"
     if [[ -n "$WATCHDIR_SRC" ]]; then
         [[ -d "$WATCHDIR_SRC" ]] || fail "[$WATCHDIR_SRC], when defined, needs to be a valid dir - missing mount?"
-        [[ -r "$WATCHDIR_SRC" ]] || fail "[$WATCHDIR_SRC] is not readable"
+        [[ -w "$WATCHDIR_SRC" ]] || fail "[$WATCHDIR_SRC] is not writable"  # needs to be writable as we 'rclone move' files away, ie effectively deletion in SRC is needed
     fi
 }
 

@@ -64,12 +64,12 @@ archived asset handling isn't described in much detail, but can be found [here](
 
 ### Required mountpoints & files
 
-- you need to provide valid mountpoint to your defined `DEST_FINAL` (& `DEST_INITIAL`
-  if env var is defined);
+- `DEST_FINAL` (& `DEST_INITIAL` if env var is defined) directories need to be backed
+  by mounted directory (or directories if they reside on different mountpoints)
    - same for `WATCHDIR_SRC`, if defined
 - mount point to configuration root dir at `/config` also needs to be provided;
 - valid rclone config file `rclone.conf` needs to be present in `/config` mount dir;
-  this conf needs to define the remote set by `REMOTE` env var;
+  this conf needs to define the remote referenced by `REMOTE` env var;
 
 
 ## Example docker command:
@@ -80,7 +80,7 @@ archived asset handling isn't described in much detail, but can be found [here](
         -e SRC_DIR=files/complete \
         -e DEST_INITIAL=/data/rclone-tmp \
         -e DEST_FINAL=/data/complete \
-        -e UID=1003 \
+        -e PUID=1000 \
         -v /host/dir/downloads/torrents:/data \
         -v $HOME/.config/seedbox-fetcher:/config \
         layr/seedbox-rclone-fetch-extract

@@ -9,7 +9,7 @@
 readonly SELF="${0##*/}"
 DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"  # location of this script
 
-readonly REGULAR_USER=abc
+readonly REGULAR_USER=abc  # needs to be kept in-sync with value in Dockerfile!
 readonly CRONFILE_TEMPLATE='/cron.template'
 readonly CRON_TARGET="/etc/crontabs/$REGULAR_USER"  # note filename needs to match user's!
 readonly DEFAULT_CRON_PATTERN='*/5 * * * *'
@@ -27,8 +27,9 @@ check_dependencies() {
 
 
 setup_users() {
-    PUID=${PUID:-1000}
-    PGID=${PGID:-1001}
+    # note we default user:group to nobody:users
+    PUID=${PUID:-99}
+    PGID=${PGID:-100}
 
     groupmod -o -g "$PGID" "$REGULAR_USER" || fail "groupmod exited w/ $?"
     usermod -o -u "$PUID" "$REGULAR_USER" || fail "usermod exited w/ $?"
