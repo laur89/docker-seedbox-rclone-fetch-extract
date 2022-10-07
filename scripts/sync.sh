@@ -31,11 +31,11 @@ validate_config_common
 check_connection || fail "no internets"
 
 REMOTE_NODES=()
-INCLUDES=()
+ADD_FILTER=()
 TO_DOWNLOAD_LIST=()
 
 if [[ -n "${RCLONE_FLAGS[*]}" ]]; then
-    IFS=' ' read -ra RCLONE_FLAGS <<< "$RCLONE_FLAGS"
+    IFS="$SEPARATOR" read -ra RCLONE_FLAGS <<< "$RCLONE_FLAGS"
 else  # no rclone flags provided, define our set of defaults;
     # note if your seedbox had an nvme or a dedicated disk plan, then there
     # would be no need for bwlimit
@@ -49,7 +49,7 @@ else  # no rclone flags provided, define our set of defaults;
 fi
 
 if [[ -n "${RCLONE_OPTS[*]}" ]]; then
-    IFS=' ' read -ra rclone_opts <<< "$RCLONE_OPTS"
+    IFS="$SEPARATOR" read -ra rclone_opts <<< "$RCLONE_OPTS"
     RCLONE_FLAGS+=("${rclone_opts[@]}")   # allow extending w/ user-provided opts
 fi
 
@@ -68,14 +68,14 @@ remote_nodes="$(rclone lsf --log-file "$LOG_ROOT/rclone-lsf.log" \
 readarray -t remote_nodes <<< "$remote_nodes"
 
 # ...then verify which assets we haven't already downloaded-processed, and compile
-# them into rclone '--include' options:
+# them into rclone '--filter' options:
 for f in "${remote_nodes[@]}"; do
     REMOTE_NODES+=("${f%/}")  # note we remove possible trailing slash
     [[ -e "$DEST_FINAL/${f%/}" ]] && continue  # already been processed
     TO_DOWNLOAD_LIST+=("$f")
-    INCLUDES+=('--include')
+    ADD_FILTER+=('--filter')
     f_escaped="$(sed 's/[.\*^$()+?{}|]/\\&/g;s/[][]/\\&/g' <<< "$f")"
-    [[ "$f_escaped" == */ ]] && INCLUDES+=("/${f_escaped}**") || INCLUDES+=("/$f_escaped")
+    [[ "$f_escaped" == */ ]] && ADD_FILTER+=("+ /${f_escaped}**") || ADD_FILTER+=("+ /$f_escaped")
 done
 
 # ...nuke assets that are already removed on the remote:
@@ -100,7 +100,7 @@ if [[ "${#TO_DOWNLOAD_LIST[@]}" -gt 0 ]]; then
     done
 
     rclone copy --log-file "$LOG_ROOT/rclone-copy.log" "${RCLONE_FLAGS[@]}" \
-        "$REMOTE:$SRC_DIR" "$DEST_INITIAL" "${INCLUDES[@]}" || fail "rclone copy failed w/ $?"  # TODO: pushover!
+        "$REMOTE:$SRC_DIR" "$DEST_INITIAL" "${ADD_FILTER[@]}" --filter '- *' || fail "rclone copy failed w/ $?"  # TODO: pushover!
 fi
 
 # process assets.

@@ -51,10 +51,10 @@ archived asset handling isn't described in much detail, but can be found [here](
    that were successfully extracted;
 - `SKIP_LOCAL_RM`: set this to any non-empty value to skip removing assets in 
   `$DEST_FINAL` whose counterpart has been removed on the remote;
-- `RCLONE_FLAGS`: space-separated options to use with all `rclone` commands; note this
+- `RCLONE_FLAGS`: semicolon-separated options to use with all `rclone` commands; note this
    overwrites the default rclone flags altogether, so make sure you know what you're
    doing;
-- `RCLONE_OPTS`: space-separated _additional_ options to be passed to all `rclone` commands;
+- `RCLONE_OPTS`: semicolon-separated _additional_ options to be passed to all `rclone` commands;
   useful eg if you want to override the `--bwlimit` option (which defaults to 20M) or
   increase logging verbosity;
 - `WATCHDIR_DEST`: path to the watchdir on your remote;
