@@ -7,6 +7,8 @@ set -o pipefail
 
 readonly CONF_ROOT='/config'
 readonly LOG_ROOT="$CONF_ROOT/logs"  # note path is also tied to logrotate config
+readonly ENV_ROOT="$CONF_ROOT/env"
+#readonly SCRIPT_ROOT="$CONF_ROOT/scripts"
 readonly RCLONE_CONF="$CONF_ROOT/rclone.conf"
 readonly SKIP_EXTRACT_MARKER_FILE='.skip-extract'  # file marking everything under its containing path shall be left un-extracted
 [[ "$SEPARATOR" == space ]] && SEPARATOR=' '
@@ -765,7 +767,7 @@ validate_config_common() {
 
     vars_defined  REMOTE  SRC_DIR  DEST_FINAL
 
-    [[ -f "$RCLONE_CONF" ]] || fail "[$RCLONE_CONF] needs to be a valid file"
+    [[ -f "$RCLONE_CONF" && -r "$RCLONE_CONF" ]] || fail "[$RCLONE_CONF] needs to be a valid readable file"
     [[ -d "$DEST_FINAL" ]] || fail "[$DEST_FINAL] needs to be a valid dir - missing mount?"
     [[ -w "$DEST_FINAL" ]] || fail "[$DEST_FINAL] is not writable"
     [[ -w "$LOG_ROOT" ]] || fail "[$LOG_ROOT] is not writable"

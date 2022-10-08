@@ -22,8 +22,8 @@ downloaded from your remote seedbox, then only those episodes present would be i
 
 We solve this by using rclone to first download assets into an intermediary
 directory not monitored by \*arr services, optionally process them (eg extract
-archives), and then move them atomically to a destination directory that \*arr is
-expecting them in.
+archives), and then move them atomically to a destination directory that \*arr
+expects them in.
 
 servarrs' completed download handling is documented/described [here](https://wiki.servarr.com/en/sonarr/settings#completed-download-handling);
 archived asset handling isn't described in much detail, but can be found [here](https://wiki.servarr.com/en/sonarr/troubleshooting#packed-torrents).

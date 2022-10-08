@@ -27,8 +27,9 @@ source /common.sh || { echo -e "    ERROR: failed to import /common.sh"; exit 1;
 _prepare_locking
 exlock_now || { info "unable to obtain lock: $?"; exit 0; }
 
-validate_config_common
 check_connection || fail "no internets"
+
+[[ -f "$ENV_ROOT/pre-parse.sh" ]] && source "$ENV_ROOT/pre-parse.sh"
 
 REMOTE_NODES=()
 ADD_FILTER=()
@@ -52,6 +53,9 @@ if [[ -n "${RCLONE_OPTS[*]}" ]]; then
     IFS="$SEPARATOR" read -ra rclone_opts <<< "$RCLONE_OPTS"
     RCLONE_FLAGS+=("${rclone_opts[@]}")   # allow extending w/ user-provided opts
 fi
+
+[[ -f "$ENV_ROOT/post-parse.sh" ]] && source "$ENV_ROOT/post-parse.sh"
+validate_config_common  # check after post-parse.sh sourcing to make sure nothing's been hecked up
 
 # non-empty $DEST_INITIAL suggests issues during previous run(s):
 is_dir_empty "$DEST_INITIAL" || err "expected DEST_INITIAL dir [$DEST_INITIAL] to be empty, but it's not"
