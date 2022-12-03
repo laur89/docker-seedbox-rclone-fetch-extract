@@ -776,12 +776,14 @@ validate_config_common() {
         [[ -d "$DEST_INITIAL" ]] || fail "[$DEST_INITIAL] needs to be a valid dir - missing mount?"
         [[ -w "$DEST_INITIAL" ]] || fail "[$DEST_INITIAL] is not writable"
     else
-        export DEST_INITIAL="$DEST_FINAL/$DEFAULT_DEST_INITIAL"
+        DEST_INITIAL="$DEST_FINAL/$DEFAULT_DEST_INITIAL"
     fi
 
-    export DEST_INITIAL="$(trim_trailing_slashes "$DEST_INITIAL")"
+    DEST_INITIAL="$(trim_trailing_slashes "$DEST_INITIAL")"
     mkdir_w_rights "$DEST_INITIAL"
-    export DEST_FINAL="$(trim_trailing_slashes "$DEST_FINAL")"
+    DEST_FINAL="$(trim_trailing_slashes "$DEST_FINAL")"
+    mkdir_w_rights "$DEST_FINAL"  # ensure correct ownership
+    export DEST_INITIAL  DEST_FINAL
 
     [[ -n "$WATCHDIR_DEST" && -z "$WATCHDIR_SRC" ]] && fail "if WATCHDIR_DEST is defined, then WATCHDIR_SRC needs to be defined as well"
     [[ -z "$WATCHDIR_DEST" && -n "$WATCHDIR_SRC" ]] && fail "if WATCHDIR_SRC is defined, then WATCHDIR_DEST needs to be defined as well"

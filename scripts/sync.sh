@@ -55,7 +55,7 @@ fi
 validate_config_common  # check after post-parse.sh sourcing to make sure nothing's been hecked up
 
 # non-empty $DEST_INITIAL suggests issues during previous run(s):
-is_dir_empty "$DEST_INITIAL" || err "expected DEST_INITIAL dir [$DEST_INITIAL] to be empty, but it's not"
+find -L "$DEST_INITIAL" -mindepth "$DEPTH" -maxdepth "$DEPTH" -print -quit | grep -q . && err "expected DEST_INITIAL dir [$DEST_INITIAL] to be empty at depth=$DEPTH, but it's not"
 
 # move assets _to_ remote (.torrent files to watchdir):
 if [[ -d "$WATCHDIR_SRC" ]] && ! is_dir_empty "$WATCHDIR_SRC"; then
@@ -121,7 +121,7 @@ while IFS= read -r -d $'\0' f; do
     fi
 
     if [[ -e "$DEST_FINAL/$f_relative" ]]; then
-        err "[$DEST_FINAL/$f_relative] already exists; cannot move [$f] into $DEST_FINAL/$f_relative"  # TODO: pushover!
+        err "[$DEST_FINAL/$f_relative] already exists; cannot move [$f] into $dest_dir/"  # TODO: pushover!
         continue
     else
         if [[ "$DEPTH" -gt 1 ]]; then
