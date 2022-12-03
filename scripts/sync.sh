@@ -10,10 +10,7 @@ is_upstream_removed() {
     local local_node remote_node
     local_node="$1"
 
-    [[ "$local_node" == */* ]] && fail "passed local node should not contain slashes: [$local_node]"
-
     for remote_node in "${REMOTE_NODES[@]}"; do
-        [[ "$remote_node" == */* ]] && fail "remote node should not contain slashes: [$remote_node]"
         [[ "$remote_node" == "$local_node" ]] && return 1
     done
 
@@ -68,13 +65,17 @@ fi
 
 # first list the remote source dir contents:
 remote_nodes="$(rclone lsf --log-file "$LOG_ROOT/rclone-lsf.log" \
-    "${RCLONE_FLAGS[@]}" -- "$REMOTE:$SRC_DIR")" || fail "rclone lsf failed w/ $?"  # TODO: pushover!
+    "${RCLONE_FLAGS[@]}" --max-depth "$DEPTH" -- "$REMOTE:$SRC_DIR")" || fail "rclone lsf failed w/ $?"  # TODO: pushover!
 readarray -t remote_nodes <<< "$remote_nodes"
 
 # ...then verify which assets we haven't already downloaded-processed, and compile
 # them into rclone '--filter' options:
 for f in "${remote_nodes[@]}"; do
-    REMOTE_NODES+=("${f%/}")  # note we remove possible trailing slash
+    unset paths
+    readarray -d / paths < <(printf '%s' "${f//$'\n'}")  # process-substitution via printf is to prevent trailing newline that's produced by bash here-string (<<<)
+    [[ "${#paths[@]}" -ne "$DEPTH" ]] && continue
+
+    REMOTE_NODES+=("${f%/}")  # note we remove possible trailing slash; this way we can compare values to local nodes verbatim
     [[ -e "$DEST_FINAL/${f%/}" ]] && continue  # already been processed
     TO_DOWNLOAD_LIST+=("$f")
     ADD_FILTER+=('--filter')
@@ -85,12 +86,12 @@ done
 # ...nuke assets that are already removed on the remote:
 if [[ -z "$SKIP_LOCAL_RM" ]]; then
     while IFS= read -r -d $'\0' f; do
-        if is_upstream_removed "$(basename -- "$f")"; then
+        if is_upstream_removed "${f##"${DEST_FINAL}/"}"; then
             rm -rf -- "$f" \
                     && info "removed [$f] whose remote counterpart is gone" \
                     || err "[rm -rf $f] failed w/ $?"
         fi
-    done< <(find -L "$DEST_FINAL" -mindepth 1 -maxdepth 1 -print0)
+    done< <(find -L "$DEST_FINAL" -mindepth "$DEPTH" -maxdepth "$DEPTH" -print0)
 fi
 
 # pull new assets:
@@ -112,16 +113,22 @@ fi
 # that were pulled during this execution; this is essentially
 # for retrying previous failures:
 while IFS= read -r -d $'\0' f; do
-    if [[ -z "$SKIP_EXTRACT" && ! -e "$DEST_FINAL/$SKIP_EXTRACT_MARKER_FILE" ]]; then
+    f_relative="${f##"${DEST_INITIAL}/"}"
+    dest_dir="$(dirname -- "$DEST_FINAL/$f_relative")"
+
+    if [[ -z "$SKIP_EXTRACT" && ! -e "$DEST_FINAL/$SKIP_EXTRACT_MARKER_FILE" && ! -e "$dest_dir/$SKIP_EXTRACT_MARKER_FILE" ]]; then
         extract.sh "$f" || { err "[$f] extraction failed"; continue; }  # TODO: pushover!
     fi
 
-    if [[ -e "$DEST_FINAL/$(basename -- "$f")" ]]; then
-        err "[$DEST_FINAL/$(basename -- "$f")] already exists; cannot move [$f] into $DEST_FINAL"  # TODO: pushover!
+    if [[ -e "$DEST_FINAL/$f_relative" ]]; then
+        err "[$DEST_FINAL/$f_relative] already exists; cannot move [$f] into $DEST_FINAL/$f_relative"  # TODO: pushover!
         continue
     else
-        mv -- "$f" "$DEST_FINAL/" || { err "[mv $f $DEST_FINAL/] failed w/ $?"; continue; }  # TODO: pushover!
+        if [[ "$DEPTH" -gt 1 ]]; then
+            [[ -d "$dest_dir" ]] || mkdir -p "$dest_dir" || { err "[mkdir -p $dest_dir] failed w/ $?"; continue; }  # TODO: pushover!
+        fi
+        mv -- "$f" "$dest_dir/" || { err "[mv $f $dest_dir/] failed w/ $?"; continue; }  # TODO: pushover!
     fi
-done< <(find -L "$DEST_INITIAL" -mindepth 1 -maxdepth 1 -print0)
+done< <(find -L "$DEST_INITIAL" -mindepth "$DEPTH" -maxdepth "$DEPTH" -print0)
 
 exit 0

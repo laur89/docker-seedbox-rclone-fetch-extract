@@ -779,13 +779,21 @@ validate_config_common() {
         export DEST_INITIAL="$DEST_FINAL/$DEFAULT_DEST_INITIAL"
     fi
 
+    export DEST_INITIAL="$(trim_trailing_slashes "$DEST_INITIAL")"
     mkdir_w_rights "$DEST_INITIAL"
+    export DEST_FINAL="$(trim_trailing_slashes "$DEST_FINAL")"
 
     [[ -n "$WATCHDIR_DEST" && -z "$WATCHDIR_SRC" ]] && fail "if WATCHDIR_DEST is defined, then WATCHDIR_SRC needs to be defined as well"
     [[ -z "$WATCHDIR_DEST" && -n "$WATCHDIR_SRC" ]] && fail "if WATCHDIR_SRC is defined, then WATCHDIR_DEST needs to be defined as well"
     if [[ -n "$WATCHDIR_SRC" ]]; then
         [[ -d "$WATCHDIR_SRC" ]] || fail "[$WATCHDIR_SRC], when defined, needs to be a valid dir - missing mount?"
         [[ -w "$WATCHDIR_SRC" ]] || fail "[$WATCHDIR_SRC] is not writable"  # needs to be writable as we 'rclone move' files away, ie effectively deletion in SRC is needed
+    fi
+
+    if [[ -n "$DEPTH" ]]; then
+        is_digit "$DEPTH" && [[ "$DEPTH" -ge 1 ]] || fail "DEPTH, when defined, needs to be digit >= 1, but is [$DEPTH]"
+    else
+        DEPTH=1  # default
     fi
 }
 
@@ -800,6 +808,11 @@ mkdir_w_rights() {
     if [[ "$EUID" -eq 0 && -n "$PUID" && -n "$PGID" ]]; then
         chown -R "${PUID}:${PGID}" "$d" || fail "[chown $PUID:$PGID $d] failed w/ $?"
     fi
+}
+
+
+trim_trailing_slashes() {
+    sed 's:/*$::' <<< "$*"
 }
 
 

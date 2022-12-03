@@ -44,6 +44,7 @@ archived asset handling isn't described in much detail, but can be found [here](
    data to; if not defined, then a directory is created inside `$DEST_FINAL`; it's 
    highly recommended you define this. Also make sure it lies on the same filesystem
    as `DEST_FINAL`, so `mv` command is atomic;
+- `DEPTH`: sets the depth level at which files are searched/synced at; defaults to 1;
 - `CRON_PATTERN`: cron pattern to be used to execute the syncing script;
    eg `*/10 * * * *` to execute every 10 minutes; defaults to every 5 min;
 - `SKIP_EXTRACT`: set this to any non-empty value to skip archived file extraction;
