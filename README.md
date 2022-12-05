@@ -3,7 +3,7 @@
 Dockerised service periodically pulling data from a remote seedbox & extracting
 archived files.
 
-Note data is synced unidirectionally, but if already downloaded & processed
+Note data is synced unidirectionally, and if already downloaded & processed
 asset gets deleted on the remote, then it's also nuked locally. This is generally
 the preferred method, as \*arr service (or whatever other media manager you happen
 to use) should be responsible for torrent removal upon successful import anyways.
@@ -45,6 +45,9 @@ archived asset handling isn't described in much detail, but can be found [here](
    highly recommended you define this. Also make sure it lies on the same filesystem
    as `DEST_FINAL`, so `mv` command is atomic;
 - `DEPTH`: sets the depth level at which files are searched/synced at; defaults to 1;
+   see below for closer `depth` explanation;
+- `RM_EMPTY_PARENT_DIRS`: set this to any non-empty value to delete empty parent dirs;
+   used only if DEPTH > 1;
 - `CRON_PATTERN`: cron pattern to be used to execute the syncing script;
    eg `*/10 * * * *` to execute every 10 minutes; defaults to every 5 min;
 - `SKIP_EXTRACT`: set this to any non-empty value to skip archived file extraction;
@@ -85,6 +88,117 @@ archived asset handling isn't described in much detail, but can be found [here](
         -v /host/dir/downloads/torrents:/data \
         -v $HOME/.config/seedbox-fetcher:/config \
         layr/seedbox-rclone-fetch-extract
+
+
+## On syncing logic and `DEPTH` env var
+
+`DEPTH` env var selects the depth level in relation to `SRC_DIR` in which files&dirs 
+are downloaded/removed from. If any of replicated/downloaded nodes get deleted on
+the remote server, they will also be deleted from `DEST_FINAL`.
+
+If additional file or dir gets written into an already-downloaded directory, then this
+addition wouldn't be downloaded, as downloaded nodes are considered finalized, meaning
+no _changes_ to them are replicated, only their removal. This applies also for child
+removals -- ie if a child file in an already-replicated directory is removed on
+remote, then this removal won't be reflected in our local copy.
+
+In other words, download/remove happens _only_ if addition/removal is detected at given `DEPTH`. 
+
+Say your `SRC_DIR` looks like:
+
+```bash
+$ tree SRC_DIR
+SRC_DIR/
+├── dir1
+│   ├── dir12
+│   │   └── file121
+│   └── file1
+├── dir2
+│   └── file2
+└── file3
+```
+
+### DEPTH=1 (default)
+
+If `DEPTH=1`, then `dir1/`, `dir2/` & `file3` would be replicated
+to `DEST_FINAL`. If any of them gets deleted on the remote server, it will also be
+deleted from `DEST_FINAL`. If additional file or dir gets written into or removed from
+`dir1/` or `dir2/`, then this addition or removal wouldn't be downloaded.
+
+Replicated copy would look like:
+
+```bash
+$ tree DEST_FINAL
+DEST_FINAL/
+├── dir1
+│   ├── dir12
+│   │   └── file121
+│   └── file1
+├── dir2
+│   └── file2
+└── file3
+```
+
+Now let's say `file3` and `file2` were removed on remote, and `newfile` was
+written into `dir1/`. After sync our local copy would look like:
+
+```bash
+$ tree DEST_FINAL
+DEST_FINAL/
+├── dir1
+│   ├── dir12
+│   │   └── file121
+│   └── file1
+└── dir2
+    └── file2
+```
+
+Note `file3` removal was reflected in our local copy as expected. But `newfile`
+addition nor `file2` removal weren't. This is because their parent directories
+(`dir1/` and `dir2/` respectively) had already been replicated, and thus are considered
+finalized.
+
+### DEPTH=2
+
+If `DEPTH=2`, then `dir12/`, `file1` & `file2` would be replicated to
+`DEST_FINAL` while preserving the original directory structure. If any of them gets
+deleted on the remote server, it will also be deleted from `DEST_FINAL`. If additional
+file or dir gets written into or removed from `dir12/`, then this addition or removal
+wouldn't be downloaded.
+Note `file3` is completely ignored by the service, as it sits at `depth=1` level.
+
+Replicated copy would look like:
+
+```bash
+$ tree DEST_FINAL
+DEST_FINAL/
+├── dir1
+│   ├── dir12
+│   │   └── file121
+│   └── file1
+└── dir2
+    └── file2
+```
+
+Now let's say `file121` and `file2` were removed on remote, and `newfile` was
+written into `dir1/dir12/`. After sync our local copy would look like:
+
+```bash
+$ tree DEST_FINAL
+DEST_FINAL/
+├── dir1
+│   ├── dir12
+│   │   └── file121
+│   └── file1
+└── dir2
+```
+
+Note `file2` removal was reflected in our local copy as expected. But `newfile`
+addition nor `file121` removal weren't. This is because their parent directory
+`dir1/dir12/` had already been replicated, and thus is considered finalized.
+
+If you want empty parent directories (`dir2/` in above example) to be cleaned up,
+then set `RM_EMPTY_PARENT_DIRS` env var to a non-empty value.
 
 
 ## TODO

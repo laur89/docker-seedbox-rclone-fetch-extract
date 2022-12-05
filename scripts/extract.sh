@@ -92,7 +92,7 @@ for format in "${!FORMAT_TO_COMMAND[@]}"; do
                     info "removed extracted archive [$file]"
                     # delete also rar part files:
                     if [[ "$format" == rar && "$file" == '../'* ]]; then
-                        find ../ -maxdepth 1 -mindepth 1 -type f -iregex '^\.\./.*\.r[0-9]+$' -delete || err "find-deleting .r\d+ files failed w/ $?"  # TODO: should we set ERR=1?
+                        find ../ -maxdepth 1 -mindepth 1 -type f -iregex '^\.\./.*\.r[0-9]+$' -delete || err "find-deleting .r\d+ files in [$(dirname -- "$PWD")] failed w/ $?"  # TODO: should we set ERR=1?
                     fi
                 else
                     err "[rm $file] failed w/ $rm_e"  # TODO: should we set ERR=1?

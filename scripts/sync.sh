@@ -83,7 +83,7 @@ for f in "${remote_nodes[@]}"; do
     [[ "$f_escaped" == */ ]] && ADD_FILTER+=("+ /${f_escaped}**") || ADD_FILTER+=("+ /$f_escaped")
 done
 
-# ...nuke assets that are already removed on the remote:
+# ...nuke assets that have been removed on the remote:
 if [[ -z "$SKIP_LOCAL_RM" ]]; then
     while IFS= read -r -d $'\0' f; do
         if is_upstream_removed "${f##"${DEST_FINAL}/"}"; then
@@ -130,5 +130,10 @@ while IFS= read -r -d $'\0' f; do
         mv -- "$f" "$dest_dir/" || { err "[mv $f $dest_dir/] failed w/ $?"; continue; }  # TODO: pushover!
     fi
 done< <(find -L "$DEST_INITIAL" -mindepth "$DEPTH" -maxdepth "$DEPTH" -print0)
+
+# cleanup empty parent dirs:
+if [[ -n "$RM_EMPTY_PARENT_DIRS" && "$DEPTH" -gt 1 ]]; then
+    find -L "$DEST_INITIAL" "$DEST_FINAL" -mindepth 1 -maxdepth "$((DEPTH-1))" -type d -empty -delete || err "find-deleting empty dirs failed w/ $?"
+fi
 
 exit 0
