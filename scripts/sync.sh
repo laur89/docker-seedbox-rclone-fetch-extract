@@ -9,7 +9,7 @@ JOB_ID="sync-$$"
 #### ENTRY
 source /common.sh || { echo -e "    ERROR: failed to import /common.sh"; exit 1; }
 
-_prepare_locking
+_prepare_locking || fail "_prepare_locking() failed w/ $?"
 exlock_now || { info "unable to obtain lock: $?"; exit 0; }
 
 check_connection || fail "no internets"
