@@ -767,29 +767,29 @@ validate_config_common() {
 
     vars_defined  REMOTE  SRC_DIR  DEST_FINAL
 
-    [[ -f "$RCLONE_CONF" && -r "$RCLONE_CONF" ]] || fail "[$RCLONE_CONF] needs to be a valid readable file"
-    [[ -d "$DEST_FINAL" ]] || fail "[$DEST_FINAL] needs to be a valid dir - missing mount?"
-    [[ -w "$DEST_FINAL" ]] || fail "[$DEST_FINAL] is not writable"
+    [[ -f "$RCLONE_CONF" && -r "$RCLONE_CONF" ]] || fail "RCLONE_CONF [$RCLONE_CONF] needs to be a valid readable file"
+    [[ -d "$DEST_FINAL" ]] || fail "DEST_FINAL [$DEST_FINAL] needs to be a valid dir - missing mount?"
+    [[ -w "$DEST_FINAL" ]] || fail "DEST_FINAL [$DEST_FINAL] is not writable"
+    DEST_FINAL="$(trim_trailing_slashes "$DEST_FINAL")"
+
     [[ -w "$LOG_ROOT" ]] || fail "[$LOG_ROOT] is not writable"
 
     if [[ -n "$DEST_INITIAL" ]]; then
-        [[ -d "$DEST_INITIAL" ]] || fail "[$DEST_INITIAL] needs to be a valid dir - missing mount?"
-        [[ -w "$DEST_INITIAL" ]] || fail "[$DEST_INITIAL] is not writable"
+        [[ -d "$DEST_INITIAL" ]] || fail "DEST_INITIAL [$DEST_INITIAL] needs to be a valid dir - missing mount?"
+        [[ -w "$DEST_INITIAL" ]] || fail "DEST_INITIAL [$DEST_INITIAL] is not writable"
     else
         DEST_INITIAL="$DEST_FINAL/$DEFAULT_DEST_INITIAL"
     fi
 
     DEST_INITIAL="$(trim_trailing_slashes "$DEST_INITIAL")"
     mkdir_w_rights "$DEST_INITIAL"
-    DEST_FINAL="$(trim_trailing_slashes "$DEST_FINAL")"
-    mkdir_w_rights "$DEST_FINAL"  # ensure correct ownership
-    export DEST_INITIAL  DEST_FINAL
+    mkdir_w_rights "$DEST_FINAL"  # dir exists, but ensure correct ownership
 
     [[ -n "$WATCHDIR_DEST" && -z "$WATCHDIR_SRC" ]] && fail "if WATCHDIR_DEST is defined, then WATCHDIR_SRC needs to be defined as well"
     [[ -z "$WATCHDIR_DEST" && -n "$WATCHDIR_SRC" ]] && fail "if WATCHDIR_SRC is defined, then WATCHDIR_DEST needs to be defined as well"
     if [[ -n "$WATCHDIR_SRC" ]]; then
-        [[ -d "$WATCHDIR_SRC" ]] || fail "[$WATCHDIR_SRC], when defined, needs to be a valid dir - missing mount?"
-        [[ -w "$WATCHDIR_SRC" ]] || fail "[$WATCHDIR_SRC] is not writable"  # needs to be writable as we 'rclone move' files away, ie effectively deletion in SRC is needed
+        [[ -d "$WATCHDIR_SRC" ]] || fail "WATCHDIR_SRC [$WATCHDIR_SRC], when defined, needs to be a valid dir - missing mount?"
+        [[ -w "$WATCHDIR_SRC" ]] || fail "WATCHDIR_SRC [$WATCHDIR_SRC] is not writable"  # needs to be writable as we 'rclone move' files away, ie effectively deletion in SRC is needed
     fi
 
     if [[ -n "$DEPTH" ]]; then
@@ -797,6 +797,8 @@ validate_config_common() {
     else
         DEPTH=1  # default
     fi
+
+    export DEST_INITIAL  DEST_FINAL  DEPTH
 }
 
 
@@ -808,7 +810,7 @@ mkdir_w_rights() {
     [[ -d "$d" ]] || mkdir -p -- "$d" || fail "[mkdir -p $d] failed w/ $?"
 
     if [[ "$EUID" -eq 0 && -n "$PUID" && -n "$PGID" ]]; then
-        chown -R "${PUID}:${PGID}" "$d" || fail "[chown $PUID:$PGID $d] failed w/ $?"
+        chown -R "${PUID}:${PGID}" "$d" || fail "[chown -R $PUID:$PGID $d] failed w/ $?"
     fi
 }
 

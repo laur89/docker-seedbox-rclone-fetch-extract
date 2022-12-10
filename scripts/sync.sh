@@ -6,18 +6,6 @@ DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"  # location of this sc
 JOB_ID="sync-$$"
 #####################################
 
-is_upstream_removed() {
-    local local_node remote_node
-    local_node="$1"
-
-    for remote_node in "${REMOTE_NODES[@]}"; do
-        [[ "$remote_node" == "$local_node" ]] && return 1
-    done
-
-    return 0  # no match, hence asset has been removed on remote
-}
-
-
 #### ENTRY
 source /common.sh || { echo -e "    ERROR: failed to import /common.sh"; exit 1; }
 
@@ -71,22 +59,21 @@ readarray -t remote_nodes <<< "$remote_nodes"
 # ...then verify which assets we haven't already downloaded-processed, and compile
 # them into rclone '--filter' options:
 for f in "${remote_nodes[@]}"; do
-    unset paths
-    readarray -d / paths < <(printf '%s' "${f//$'\n'}")  # process-substitution via printf is to prevent trailing newline that's produced by bash here-string (<<<)
-    [[ "${#paths[@]}" -ne "$DEPTH" ]] && continue
+    readarray -d / path_segments < <(printf '%s' "$f")  # process-substitution via printf is to prevent trailing newline that's produced by bash here-string (<<<)
+    [[ "${#path_segments[@]}" -ne "$DEPTH" ]] && continue
 
     REMOTE_NODES+=("${f%/}")  # note we remove possible trailing slash; this way we can compare values to local nodes verbatim
     [[ -e "$DEST_FINAL/${f%/}" ]] && continue  # already been processed
     TO_DOWNLOAD_LIST+=("$f")
     ADD_FILTER+=('--filter')
-    f_escaped="$(sed 's/[.\*^$()+?{}|]/\\&/g;s/[][]/\\&/g' <<< "$f")"
+    f_escaped="$(sed 's/[].\*^$()+?{}|[]/\\&/g' <<< "$f")"
     [[ "$f_escaped" == */ ]] && ADD_FILTER+=("+ /${f_escaped}**") || ADD_FILTER+=("+ /$f_escaped")
 done
 
 # ...nuke assets that have been removed on the remote:
 if [[ -z "$SKIP_LOCAL_RM" ]]; then
     while IFS= read -r -d $'\0' f; do
-        if is_upstream_removed "${f##"${DEST_FINAL}/"}"; then
+        if ! contains "${f##"${DEST_FINAL}/"}" "${REMOTE_NODES[@]}"; then
             rm -rf -- "$f" \
                     && info "removed [$f] whose remote counterpart is gone" \
                     || err "[rm -rf $f] failed w/ $?"

@@ -31,6 +31,9 @@ setup_users() {
     PUID=${PUID:-99}
     PGID=${PGID:-100}
 
+    is_digit "$PUID" || fail "PUID needs to be a digit, but is [$PUID]"
+    is_digit "$PGID" || fail "PGID needs to be a digit, but is [$PGID]"
+
     groupmod -o -g "$PGID" "$REGULAR_USER" || fail "groupmod exited w/ $?"
     usermod -o -u "$PUID" "$REGULAR_USER" || fail "usermod exited w/ $?"
 }
@@ -87,7 +90,7 @@ EOF
 setup_logrotate() {
     local opt rotate interval size name pattern rotate_confdir target_conf OPTIND
 
-    while getopts "r:i:s:n:p:" opt; do
+    while getopts 'r:i:s:n:p:' opt; do
         case "$opt" in
             r) rotate="$OPTARG"
                 ;;
@@ -109,7 +112,7 @@ setup_logrotate() {
     [[ -z "$interval" ]] && interval=weekly
     [[ -z "$size" ]] && size=1000k
     [[ -z "$name" ]] && name=common-config
-    [[ -z "$pattern" ]] && pattern='/var/log/*.log'
+    [[ -z "$pattern" ]] && pattern="$LOG_ROOT/*.log"
 
 
     rotate_confdir='/etc/logrotate.d'
@@ -146,7 +149,7 @@ setup_users
 validate_config_common  # make sure this comes after setup_users(), so PUID/PGID env vars are set
 setup_cron
 #setup_msmtp
-#setup_logrotate
+setup_logrotate
 #unset NO_SEND_MAIL
 
 exit 0

@@ -45,7 +45,7 @@ archived asset handling isn't described in much detail, but can be found [here](
    highly recommended you define this. Also make sure it lies on the same filesystem
    as `DEST_FINAL`, so `mv` command is atomic;
 - `DEPTH`: sets the depth level at which files are searched/synced at; defaults to 1;
-   see below for closer `depth` explanation;
+   see below for closer depth explanation;
 - `RM_EMPTY_PARENT_DIRS`: set this to any non-empty value to delete empty parent dirs;
    used only if DEPTH > 1;
 - `CRON_PATTERN`: cron pattern to be used to execute the syncing script;
@@ -63,8 +63,8 @@ archived asset handling isn't described in much detail, but can be found [here](
   increase logging verbosity;
 - `WATCHDIR_DEST`: path to the watchdir on your remote;
 - `WATCHDIR_SRC`: path to the watchdir mounted in container;
-- `PGID`: user id;
-- `PUID`: group id;
+- `PGID`: group id; defaults to `100` (users)
+- `PUID`: user id; defaults to `99` (nobody)
 
 ### Required mountpoints & files
 
@@ -104,7 +104,7 @@ remote, then this removal won't be reflected in our local copy.
 
 In other words, download/remove happens _only_ if addition/removal is detected at given `DEPTH`. 
 
-Say your `SRC_DIR` looks like:
+Say your `SRC_DIR` on the remote server looks like:
 
 ```bash
 $ tree SRC_DIR
@@ -125,7 +125,7 @@ to `DEST_FINAL`. If any of them gets deleted on the remote server, it will also 
 deleted from `DEST_FINAL`. If additional file or dir gets written into or removed from
 `dir1/` or `dir2/`, then this addition or removal wouldn't be downloaded.
 
-Replicated copy would look like:
+Replicated copy would look like an exact copy of the remote:
 
 ```bash
 $ tree DEST_FINAL
@@ -161,7 +161,8 @@ finalized.
 ### DEPTH=2
 
 If `DEPTH=2`, then `dir12/`, `file1` & `file2` would be replicated to
-`DEST_FINAL` while preserving the original directory structure. If any of them gets
+`DEST_FINAL` while _preserving the original directory structure_ - meaning parent
+directories from the `SRC_DIR` root will be created also on DEST_FINAL. If any of them gets
 deleted on the remote server, it will also be deleted from `DEST_FINAL`. If additional
 file or dir gets written into or removed from `dir12/`, then this addition or removal
 wouldn't be downloaded.
@@ -212,6 +213,6 @@ then set `RM_EMPTY_PARENT_DIRS` env var to a non-empty value.
 - skip downloads of assets that wouldn't fit on local filesystem; eg similar to
   enough_space_for_extraction(), but for downloading, not extracting;
 - find a better way for compiling `copy` command - atm we're escaping filenames for
-  the `--include` flags; `--files-from` might be an option, but unsure whether
-  it'd pull the whole dir if only dir, as opposed to its contents, is listed;
+  the `--filter +` flags; `--files-from` might be an option, but unsure whether
+  it'd pull the whole dir if only dir -- as opposed to its contents -- is listed;
 
