@@ -48,12 +48,12 @@ find -L "$DEST_INITIAL" -mindepth "$DEPTH" -maxdepth "$DEPTH" -print -quit | gre
 # move assets _to_ remote (.torrent files to watchdir):
 if [[ -d "$WATCHDIR_SRC" ]] && ! is_dir_empty "$WATCHDIR_SRC"; then
     rclone move --log-file "$LOG_ROOT/rclone-move.log" "${RCLONE_FLAGS[@]}" \
-            "$WATCHDIR_SRC" "$REMOTE:$WATCHDIR_DEST" || err "rclone move from [$WATCHDIR_SRC] to [$WATCHDIR_DEST] failed w/ $?"  # TODO: pushover! but do _not_ fail out here
+            "$WATCHDIR_SRC" "$REMOTE:$WATCHDIR_DEST" 2>"$LOG_ROOT/rclone-move.stderr.log" || err "rclone move from [$WATCHDIR_SRC] to [$WATCHDIR_DEST] failed w/ $?"  # TODO: pushover! but do _not_ fail out here
 fi
 
 # first list the remote source dir contents:
 remote_nodes="$(rclone lsf --log-file "$LOG_ROOT/rclone-lsf.log" \
-    "${RCLONE_FLAGS[@]}" --max-depth "$DEPTH" -- "$REMOTE:$SRC_DIR")" || fail "rclone lsf failed w/ $?"  # TODO: pushover!
+    "${RCLONE_FLAGS[@]}" --max-depth "$DEPTH" -- "$REMOTE:$SRC_DIR" 2>"$LOG_ROOT/rclone-lsf.stderr.log")" || fail "rclone lsf failed w/ $?"  # TODO: pushover!
 readarray -t remote_nodes <<< "$remote_nodes"
 
 # ...then verify which assets we haven't already downloaded-processed, and compile
@@ -92,7 +92,7 @@ if [[ "${#TO_DOWNLOAD_LIST[@]}" -gt 0 ]]; then
     done
 
     rclone copy --log-file "$LOG_ROOT/rclone-copy.log" "${RCLONE_FLAGS[@]}" \
-        "$REMOTE:$SRC_DIR" "$DEST_INITIAL" "${ADD_FILTER[@]}" --filter '- *' || fail "rclone copy failed w/ $?"  # TODO: pushover!
+        "$REMOTE:$SRC_DIR" "$DEST_INITIAL" "${ADD_FILTER[@]}" --filter '- *' 2>"$LOG_ROOT/rclone-copy.stderr.log" || fail "rclone copy failed w/ $?"  # TODO: pushover!
 fi
 
 # process assets.
