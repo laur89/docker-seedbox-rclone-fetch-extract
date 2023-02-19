@@ -108,9 +108,9 @@ setup_logrotate() {
     done
     shift "$((OPTIND-1))"
 
-    [[ -z "$rotate" ]] && rotate=20
+    [[ -z "$rotate" ]] && rotate=3
     [[ -z "$interval" ]] && interval=weekly
-    [[ -z "$size" ]] && size=1000k
+    [[ -z "$size" ]] && size=5M
     [[ -z "$name" ]] && name=common-config
     [[ -z "$pattern" ]] && pattern="$LOG_ROOT/*.log"
 
