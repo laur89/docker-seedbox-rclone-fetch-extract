@@ -52,6 +52,9 @@ if [[ -d "$WATCHDIR_SRC" ]] && ! is_dir_empty "$WATCHDIR_SRC"; then
 fi
 
 # first list the remote source dir contents:
+#
+# note rclone doesn't implement --min-depth yet (see https://github.com/rclone/rclone/issues/6602);
+# but to cheat, you could do  | grep -P '^([^/]+/){'"$((DEPTH-1))"'}[^/]+/?$'
 remote_nodes="$(rclone lsf --log-file "$LOG_ROOT/rclone-lsf.log" \
     "${RCLONE_FLAGS[@]}" --max-depth "$DEPTH" -- "$REMOTE:$SRC_DIR" 2>"$LOG_ROOT/rclone-lsf.stderr.log")" || fail "rclone lsf failed w/ $?"  # TODO: pushover!
 readarray -t remote_nodes <<< "$remote_nodes"
