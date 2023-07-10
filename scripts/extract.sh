@@ -12,6 +12,7 @@ JOB_ID="$PPID"  # PID of the calling sync.sh process
 declare -A FORMAT_TO_COMMAND=(
     [zip]='unzip -u'
     [rar]='unrar -o- e'
+    [tgz]='tar zxvf'
 )
 EXTRACTION_SUBDIR="${EXTRACTION_SUBDIR:-extracted}"  # content will be extracted into this to-be-created subfolder; no slashes!
                                                      # note if this dir already exists, we modify this value.
@@ -55,6 +56,7 @@ for format in "${!FORMAT_TO_COMMAND[@]}"; do
         cd -- "$(dirname -- "$file")" || { err "cd to [$file] containing dir failed w/ $?"; ERR=1; continue; }
 
         # handle special case where $ASSET itself is the archive file, ie it's not in its own directory:
+        # (note this case could be avoided with a plugin that force-creates a root-dir, see https://forum.deluge-torrent.org/viewtopic.php?f=9&t=51839)
         if [[ "$file" == "$ASSET" ]]; then
             # TODO note unsure whether servarrs are happy with this solution or not;
             #      maybe pushover so we can see how it fares in real life?

@@ -37,8 +37,8 @@ ADD APKBUILD makefile.patch  /build
 
 RUN abuild-keygen -i -a -n
 RUN abuild -r
-#RUN cp /home/apk/packages/non-free/x86_64/unrar-* /build/unrar-target
-RUN cp /home/apk/packages/x86_64/unrar-* /build/unrar-target
+#RUN mv /home/apk/packages/non-free/x86_64/unrar-* /build/unrar-target
+RUN mv /home/apk/packages/x86_64/unrar-* /build/unrar-target
 
 # builds something like:
 #   /home/apk/packages/non-free/x86_64/unrar-6.1.4-r0.apk
