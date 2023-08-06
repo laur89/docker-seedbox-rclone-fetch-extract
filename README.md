@@ -202,6 +202,17 @@ If you want empty parent directories (`dir2/` in above example) to be cleaned up
 then set `RM_EMPTY_PARENT_DIRS` env var to a non-empty value.
 
 
+## Debugging
+
+Sometimes it's useful to debug rclone/config issues directly from the
+container shell. If you're doing so, make sure to run all commands as `abc`
+user, otherwise you may accidentally mess up some files' ownership. e.g.:
+
+```bash
+su abc -s /bin/sh -c 'rclone lsf -vvv --max-depth 1 --config /config/rclone.conf  your-remote:'
+su abc -s /bin/sh -c /sync.sh
+```
+
 ## TODO
 
 - notification systems

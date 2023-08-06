@@ -6,13 +6,74 @@ DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"  # location of this sc
 JOB_ID="sync-$$"
 #####################################
 
+_kill_other_process() {
+    local opt OPTIND signal pids pid
+
+    signal=SIGTERM
+    while getopts 'k' opt; do
+        case "$opt" in
+            k) signal=SIGKILL
+                ;;
+            *) fail -N "$FUNCNAME called with unsupported flag(s) [$opt]"
+                ;;
+        esac
+    done
+    shift "$((OPTIND-1))"
+
+    readarray -t pids < <(pgrep -fx "bash.*/$SELF" | grep -vFx "$$")  # to be more lenient, do   $ pgrep -fx ".*\bbash\b.*/$SELF" ;;;  or to be more exact, do   $ pgrep -fx "bash /usr/local/sbin/$SELF"  (note path is decided in Dockerfile)
+
+    # sanity to detect process grep failures:
+    [[ "${#pids[@]}" -eq 0 && "$signal" != SIGKILL ]] && fail 'no pids to kill found!'  # SIGKILL is a retry-killing, ok if no process found
+
+    for pid in "${pids[@]}"; do
+        is_digit "$pid" || fail "one of the found PIDs was not a digit: [$pid]"
+        if kill -0 -- "$pid" 2>/dev/null; then  # if process still running, kill it:
+            info "sending $signal to process group [$pid]..."
+            kill -$signal -- -$pid || fail "sending $signal to process group [$pid] failed w/ $?"
+        fi
+    done
+}
+
+
+check_for_rclone_stall() {
+    local size last_size last_time time time_d
+
+    _write_state() {
+        echo -n "${time}:$size" > "$RCLONE_STATEFILE"
+    }
+
+    size="$(get_size "$DEST_INITIAL")"
+    time="$(date +%s)"
+
+    if ! check_connection; then
+        _write_state  # update our timestamp as connection drop should reset it
+        fail 'no internets & lockfile exists, skipping...'
+    elif [[ -s "$RCLONE_STATEFILE" ]]; then
+        IFS=':' read -r last_time last_size < "$RCLONE_STATEFILE"
+        time_d="$((time - last_time))"
+
+        if [[ "$size" -gt "$last_size" ]]; then
+            _write_state  # data transfer/unpacking is clearly working, update state
+        elif [[ "$time_d" -ge "$PROCESS_STALL_THRESHOLD_SEC" ]]; then
+            warn "$SELF has been running for at least ${time_d}s with constant [$DEST_INITIAL] size, suspecting rclone stall; killing its pgroup..."
+            _kill_other_process
+            sleep 10  # give some time for processes to pack up...
+            _kill_other_process -k  # ...if still running, nuke
+            sleep 2
+            exlock_now && return 0  # post-kill lock succeeded, this instance may carry on
+        fi
+    else
+        _write_state
+    fi
+
+    info 'unable to obtain lock, process already running'
+    exit 0  # exit, not return
+}
+
+
 #### ENTRY
 source /common.sh || { echo -e "    ERROR: failed to import /common.sh"; exit 1; }
-
 _prepare_locking || fail "_prepare_locking() failed w/ $?"
-exlock_now || { info "unable to obtain lock: $?"; exit 0; }
-
-check_connection || fail "no internets"
 
 [[ -f "$ENV_ROOT/pre-parse.sh" ]] && source "$ENV_ROOT/pre-parse.sh"
 
@@ -41,6 +102,12 @@ fi
 
 [[ -f "$ENV_ROOT/post-parse.sh" ]] && source "$ENV_ROOT/post-parse.sh"
 validate_config_common  # check after post-parse.sh sourcing to make sure nothing's been hecked up
+
+# note we lock this late to ensure validate_config_common() has been executed beforehand
+exlock_now || check_for_rclone_stall
+[[ -f "$RCLONE_STATEFILE" ]] && rm -- "$RCLONE_STATEFILE"
+
+check_connection || fail 'no internets'
 
 # non-empty $DEST_INITIAL suggests issues during previous run(s):
 find -L "$DEST_INITIAL" -mindepth "$DEPTH" -maxdepth "$DEPTH" -print -quit | grep -q . && err "expected DEST_INITIAL dir [$DEST_INITIAL] to be empty at depth=$DEPTH, but it's not"

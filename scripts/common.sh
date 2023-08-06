@@ -11,6 +11,7 @@ readonly ENV_ROOT="$CONF_ROOT/env"
 #readonly SCRIPT_ROOT="$CONF_ROOT/scripts"
 readonly RCLONE_CONF="$CONF_ROOT/rclone.conf"
 readonly SKIP_EXTRACT_MARKER_FILE='.skip-extract'  # file marking everything under its containing path shall be left un-extracted
+readonly RCLONE_STATEFILE='/tmp/rclone-state'
 [[ "$SEPARATOR" == space ]] && SEPARATOR=' '
 [[ "$SEPARATOR" == comma ]] && SEPARATOR=','
 [[ "$SEPARATOR" == colon ]] && SEPARATOR=':'
@@ -798,7 +799,13 @@ validate_config_common() {
         DEPTH=1  # default
     fi
 
-    export DEST_INITIAL  DEST_FINAL  DEPTH
+    if [[ -n "$PROCESS_STALL_THRESHOLD_SEC" ]]; then
+        is_digit "$PROCESS_STALL_THRESHOLD_SEC" && [[ "$PROCESS_STALL_THRESHOLD_SEC" -ge 1 ]] || fail "PROCESS_STALL_THRESHOLD_SEC, when defined, needs to be digit >= 1, but is [$PROCESS_STALL_THRESHOLD_SEC]"
+    else
+        PROCESS_STALL_THRESHOLD_SEC=600  # default
+    fi
+
+    export DEST_INITIAL  DEST_FINAL  DEPTH  PROCESS_STALL_THRESHOLD_SEC
 }
 
 
