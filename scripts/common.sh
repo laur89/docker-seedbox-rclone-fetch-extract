@@ -805,6 +805,8 @@ validate_config_common() {
         PROCESS_STALL_THRESHOLD_SEC=600  # default
     fi
 
+    [[ "$RCLONE_FLAGS" =~ (^|[^a-zA-Z0-9_])--(exclude|include)($|[^a-zA-Z0-9_]) ]] && warn 'replace [--{exclude*,include*}] flags with --filter ones; see https://rclone.org/filtering/#filter-add-a-file-filtering-rule'
+
     export DEST_INITIAL  DEST_FINAL  DEPTH  PROCESS_STALL_THRESHOLD_SEC
 }
 

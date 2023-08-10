@@ -8,8 +8,8 @@ asset gets deleted on the remote, then it's also nuked locally. This is generall
 the preferred method, as \*arr service (or whatever other media manager you happen
 to use) should be responsible for torrent removal upon successful import anyways.
 
-It's also important to know if an already-downloaded source file is modified (apart
-from deleting it), then those modifications will no longer be pulled.
+It's also important to know if an already-downloaded source file is modified at the
+remote (apart from deletion), then those modifications will no longer be reflected locally.
 
 
 ## Rationale

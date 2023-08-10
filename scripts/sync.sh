@@ -42,7 +42,7 @@ check_for_rclone_stall() {
         echo -n "${time}:$size" > "$RCLONE_STATEFILE"
     }
 
-    size="$(get_size "$DEST_INITIAL")"
+    size="$(get_size -b "$DEST_INITIAL")"
     time="$(date +%s)"
 
     if ! check_connection; then
@@ -52,10 +52,10 @@ check_for_rclone_stall() {
         IFS=':' read -r last_time last_size < "$RCLONE_STATEFILE"
         time_d="$((time - last_time))"
 
-        if [[ "$size" -gt "$last_size" ]]; then
+        if [[ "$(bc <<< "$size > $last_size")" -eq 1 ]]; then
             _write_state  # data transfer/unpacking is clearly working, update state
         elif [[ "$time_d" -ge "$PROCESS_STALL_THRESHOLD_SEC" ]]; then
-            warn "$SELF has been running for at least ${time_d}s with constant [$DEST_INITIAL] size, suspecting rclone stall; killing its pgroup..."
+            warn "$SELF has been running for at least $(print_time "$time_d") with constant [$DEST_INITIAL] size, suspecting rclone stall; killing its pgroup..."
             _kill_other_process
             sleep 10  # give some time for processes to pack up...
             _kill_other_process -k  # ...if still running, nuke
@@ -110,7 +110,7 @@ exlock_now || check_for_rclone_stall
 check_connection || fail 'no internets'
 
 # non-empty $DEST_INITIAL suggests issues during previous run(s):
-find -L "$DEST_INITIAL" -mindepth "$DEPTH" -maxdepth "$DEPTH" -print -quit | grep -q . && err "expected DEST_INITIAL dir [$DEST_INITIAL] to be empty at depth=$DEPTH, but it's not"
+find -L "$DEST_INITIAL" -mindepth "$DEPTH" -maxdepth "$DEPTH" -print -quit | grep -q . && warn "expected DEST_INITIAL dir [$DEST_INITIAL] to be empty at depth=$DEPTH, but it's not"
 
 # move assets _to_ remote (.torrent files to watchdir):
 if [[ -d "$WATCHDIR_SRC" ]] && ! is_dir_empty "$WATCHDIR_SRC"; then
@@ -142,13 +142,18 @@ done
 
 # ...nuke assets that have been removed on the remote:
 if [[ -z "$SKIP_LOCAL_RM" ]]; then
+    # exclude DEST_INITIAL in case it defaults to a dir under DEST_FINAL/:
+    excluded_path="$DEST_INITIAL"
+    [[ "$DEPTH" -gt 1 ]] && excluded_path+='/*'
+
     while IFS= read -r -d $'\0' f; do
         if ! contains "${f##"${DEST_FINAL}/"}" "${REMOTE_NODES[@]}"; then
             rm -rf -- "$f" \
                     && info "removed [$f] whose remote counterpart is gone" \
                     || err "[rm -rf $f] failed w/ $?"
         fi
-    done< <(find -L "$DEST_FINAL" -mindepth "$DEPTH" -maxdepth "$DEPTH" -print0)
+    done< <(find -L "$DEST_FINAL" -mindepth "$DEPTH" -maxdepth "$DEPTH" -not \( -path "$excluded_path" -prune \) -print0)
+    unset excluded_path
 fi
 
 # pull new assets:
@@ -190,7 +195,7 @@ done< <(find -L "$DEST_INITIAL" -mindepth "$DEPTH" -maxdepth "$DEPTH" -print0)
 
 # cleanup empty parent dirs:
 if [[ -n "$RM_EMPTY_PARENT_DIRS" && "$DEPTH" -gt 1 ]]; then
-    find -L "$DEST_INITIAL" "$DEST_FINAL" -mindepth 1 -maxdepth "$((DEPTH-1))" -type d -empty -delete || err "find-deleting empty dirs failed w/ $?"
+    find -L "$DEST_INITIAL" "$DEST_FINAL" -mindepth 1 -maxdepth "$((DEPTH-1))" -not \( -path "$DEST_INITIAL" -prune \) -type d -empty -delete || err "find-deleting empty dirs failed w/ $?"
 fi
 
 exit 0
