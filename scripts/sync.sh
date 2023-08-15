@@ -90,8 +90,9 @@ else  # no rclone flags provided, define our set of defaults;
       --config "$RCLONE_CONF"
       --fast-list
       --bwlimit 20M
-      --use-mmap
-      --transfers 10
+      --transfers 2
+      --retries 6
+      --retries-sleep 10s
     )
 fi
 

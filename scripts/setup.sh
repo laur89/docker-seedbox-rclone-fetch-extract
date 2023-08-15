@@ -47,6 +47,10 @@ setup_cron() {
         cp -- "$CRONFILE_TEMPLATE" "$CRON_TARGET" || fail "copying cron template failed"
 
         # add cron entry:
+        #   note busybox' cron is bit odd. while long-running process is running, then
+        #   cron skips starting additional processes for X minutes. appending '&' would
+        #   remove this behavior, but then we lose the ability to kill pgroup via
+        #   $ kill -- -pid          see https://superuser.com/q/1803513/179401
         printf '%s  sync.sh\n' "${CRON_PATTERN:-"$DEFAULT_CRON_PATTERN"}" >> "$CRON_TARGET"
     fi
 }
