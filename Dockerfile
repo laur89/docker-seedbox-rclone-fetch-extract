@@ -1,4 +1,4 @@
-FROM          alpine:3.18
+FROM          alpine:3.19
 MAINTAINER    Laur Aliste
 
 ENV LANG=C.UTF-8

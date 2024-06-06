@@ -7,9 +7,10 @@ JOB_ID="sync-$$"
 #####################################
 
 _kill_other_process() {
-    local opt OPTIND signal pids pid
+    local opt OPTIND signal pids pid exit_code
 
     signal=SIGTERM
+    exit_code=1  # whether process was killed
     while getopts 'k' opt; do
         case "$opt" in
             k) signal=SIGKILL
@@ -30,8 +31,11 @@ _kill_other_process() {
         if kill -0 -- "$pid" 2>/dev/null; then  # if process still running, kill it:
             info "sending $signal to process group [$pid]..."
             kill -$signal -- -$pid || fail "sending $signal to process group [$pid] failed w/ $?"
+            exit_code=0
         fi
     done
+
+    return "$exit_code"
 }
 
 
@@ -56,10 +60,9 @@ check_for_rclone_stall() {
             _write_state  # data transfer/unpacking is clearly working, update state
         elif [[ "$time_d" -ge "$PROCESS_STALL_THRESHOLD_SEC" ]]; then
             warn "$SELF has been running for at least $(print_time "$time_d") with constant [$DEST_INITIAL] size, suspecting rclone stall; killing its pgroup..."
-            _kill_other_process
-            sleep 10  # give some time for processes to pack up...
-            _kill_other_process -k  # ...if still running, nuke
-            sleep 2
+            _kill_other_process && sleep 10
+            # if process still running, nuke:
+            _kill_other_process -k && sleep 2
             exlock_now && return 0  # post-kill lock succeeded, this instance may carry on
         fi
     else
@@ -196,7 +199,7 @@ done< <(find -L "$DEST_INITIAL" -mindepth "$DEPTH" -maxdepth "$DEPTH" -print0)
 
 # cleanup empty parent dirs:
 if [[ -n "$RM_EMPTY_PARENT_DIRS" && "$DEPTH" -gt 1 ]]; then
-    find -L "$DEST_INITIAL" "$DEST_FINAL" -mindepth 1 -maxdepth "$((DEPTH-1))" -not \( -path "$DEST_INITIAL" -prune \) -type d -empty -delete || err "find-deleting empty dirs failed w/ $?"
+    find -L "$DEST_INITIAL" "$DEST_FINAL" -mindepth 1 -maxdepth "$((DEPTH-1))" -not \( -path "$DEST_INITIAL" -prune \) -type d -empty -delete || err "find-deleting empty parent dirs failed w/ $?"
 fi
 
 exit 0
