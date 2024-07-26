@@ -10,7 +10,6 @@ _kill_other_process() {
     local opt OPTIND signal pids pid exit_code
 
     signal=SIGTERM
-    exit_code=1  # whether process was killed
     while getopts 'k' opt; do
         case "$opt" in
             k) signal=SIGKILL
@@ -35,7 +34,7 @@ _kill_other_process() {
         fi
     done
 
-    return "$exit_code"
+    return "${exit_code:-1}"  # whether process was killed
 }
 
 

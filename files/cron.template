@@ -3,3 +3,4 @@ MAILTO=""
 
 # m h dom mon dow     command
 # ============================================================================
+6  5 * * 7   logrotate /etc/logrotate.conf
