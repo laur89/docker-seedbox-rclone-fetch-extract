@@ -1,4 +1,4 @@
-FROM alpine:latest AS build
+FROM alpine:latest AS builder
 
 # first build unrar
 
@@ -10,16 +10,15 @@ RUN apk add --no-cache alpine-sdk sudo
 
 #RUN addgroup -g "$GID" "$USER"
 RUN adduser \
-    --disabled-password \
-    --gecos "" \
-    --ingroup users \
-    --ingroup abuild \
-    --uid "$UID" \
-    "$USER"
-
-RUN mkdir -p /build/unrar-target
-RUN chown -R apk /build 
-RUN echo "$USER ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USER
+        --disabled-password \
+        --gecos "" \
+        --ingroup users \
+        --ingroup abuild \
+        --uid "$UID" \
+        "$USER" && \
+    mkdir -p /build && \
+    chown -R apk /build && \
+    echo "$USER ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USER
 
 # abuild needs to be executed as non-root:
 USER "$USER"
@@ -37,9 +36,10 @@ ADD APKBUILD makefile.patch  /build
 
 RUN abuild-keygen -i -a -n
 RUN abuild -r
-#RUN mv /home/apk/packages/non-free/x86_64/unrar-* /build/unrar-target
-RUN mv /home/apk/packages/x86_64/unrar-* /build/unrar-target
 
 # builds something like:
 #   /home/apk/packages/non-free/x86_64/unrar-6.1.4-r0.apk
 #   /home/apk/packages/non-free/x86_64/unrar-doc-6.1.4-r0.apk
+
+FROM scratch AS exporter
+COPY --from=builder /home/apk/packages/x86_64/unrar-*  .
