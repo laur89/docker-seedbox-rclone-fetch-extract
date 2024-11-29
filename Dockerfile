@@ -1,7 +1,8 @@
-FROM          alpine:3.20
+FROM          alpine:3
 MAINTAINER    Laur Aliste
 
-ENV LANG=C.UTF-8
+ENV LANG=C.UTF-8 \
+    RCLONE_VER=1.66.0-r5
 
 ADD scripts/* /usr/local/sbin/
 ADD files/*   /
@@ -10,7 +11,7 @@ COPY deps/builds/unrar-7.0.9-r0.apk  /tmp/unrar.apk
 RUN apk update && \
     apk add --no-cache --allow-untrusted /tmp/unrar.apk && \
     apk add --no-cache \
-        rclone \
+        rclone=$RCLONE_VER \
         unzip \
         grep \
         file \

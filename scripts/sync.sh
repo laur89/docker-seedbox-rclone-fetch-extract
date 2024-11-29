@@ -63,6 +63,7 @@ check_for_rclone_stall() {
             # if process still running, nuke:
             _kill_other_process -k && sleep 2
             exlock_now && return 0  # post-kill lock succeeded, this instance may carry on
+            fail 'exlock_now() still failed after killing!'
         fi
     else
         _write_state

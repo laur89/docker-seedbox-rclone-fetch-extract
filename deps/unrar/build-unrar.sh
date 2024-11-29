@@ -8,7 +8,7 @@ TARGET_DIR="${DIR}/../builds"
 #####################################
 
 [[ -d "$TARGET_DIR" ]] || exit 1
-docker build  --output "$TARGET_DIR" .
+docker build  --output "$TARGET_DIR" . || exit $?
 
 exit 0
 
