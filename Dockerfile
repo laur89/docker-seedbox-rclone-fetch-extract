@@ -1,8 +1,7 @@
 FROM          alpine:3
-MAINTAINER    Laur Aliste
 
 ENV LANG=C.UTF-8 \
-    RCLONE_VER=1.68.2-r0
+    RCLONE_VER=1.68.2-r1
 
 ADD scripts/* /usr/local/sbin/
 ADD files/*   /
