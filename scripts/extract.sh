@@ -39,9 +39,7 @@ enough_space_for_extraction() {
 
 ## ENTRY
 source /common.sh || { echo -e "    ERROR: failed to import /common.sh"; exit 1; }
-
-START_TIME="$(date +%s)"
-ERR=0
+unset ERR
 
 for format in "${!FORMAT_TO_COMMAND[@]}"; do
     while IFS= read -r -d $'\0' file; do
@@ -109,5 +107,5 @@ for format in "${!FORMAT_TO_COMMAND[@]}"; do
     done < <(find "$ASSET" -type f -iname "*.${format}" -print0)
 done
 
-exit $ERR
+exit "${ERR:-0}"
 

@@ -183,7 +183,7 @@ while IFS= read -r -d $'\0' f; do
     dest_dir="$(dirname -- "$DEST_FINAL/$f_relative")"
 
     if [[ -z "$SKIP_EXTRACT" && ! -e "$DEST_FINAL/$SKIP_EXTRACT_MARKER_FILE" && ! -e "$dest_dir/$SKIP_EXTRACT_MARKER_FILE" ]]; then
-        extract.sh "$f" || { err "[$f] extraction failed"; continue; }  # TODO: pushover!
+        extract.sh "$f" || { err "[$f] extraction failed, see logs"; continue; }  # TODO: pushover!
     fi
 
     if [[ -e "$DEST_FINAL/$f_relative" ]]; then
