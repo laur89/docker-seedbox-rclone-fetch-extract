@@ -1,7 +1,7 @@
 FROM alpine:3
 
 ENV LANG=C.UTF-8 \
-    RCLONE_VER=1.68.2-r3
+    RCLONE_VER=1.68.2-r4
 
 ADD scripts/* /usr/local/sbin/
 ADD files/*   /
